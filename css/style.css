@@ -563,13 +563,49 @@ video, canvas {
 }
 
 .comparison-slider {
-    writing-mode: bt-lr;
-    -webkit-appearance: slider-vertical;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    -webkit-appearance: none;
+    appearance: none;
     width: 30px;
     height: 200px;
     background: linear-gradient(180deg, var(--secondary-gradient));
     border-radius: 15px;
     outline: none;
+    cursor: pointer;
+}
+
+.comparison-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+}
+
+.comparison-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.comparison-slider::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+}
+
+.comparison-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
 
 .slider-label {
@@ -999,8 +1035,10 @@ video, canvas {
     }
     
     .comparison-slider {
-        writing-mode: lr-tb;
+        writing-mode: horizontal-tb;
+        direction: ltr;
         -webkit-appearance: none;
+        appearance: none;
         width: 200px;
         height: 30px;
     }

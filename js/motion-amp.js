@@ -1656,13 +1656,25 @@ Ready to reveal the invisible world! 🎬⚡
 // PWA support
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    window.motionAmp.deferredPrompt = e;
+    // Store the event for later use
+    if (window.motionAmp) {
+        window.motionAmp.deferredPrompt = e;
+    } else {
+        // Store temporarily until motionAmp is initialized
+        window.tempDeferredPrompt = e;
+    }
 });
 
 // Initialize the application when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Initializing Motion Amplification Pro...');
     window.motionAmp = new MotionAmplifierPro();
+    
+    // Check if there's a temporarily stored deferred prompt
+    if (window.tempDeferredPrompt) {
+        window.motionAmp.deferredPrompt = window.tempDeferredPrompt;
+        window.tempDeferredPrompt = null;
+    }
     
     // Service worker registration for PWA
     if ('serviceWorker' in navigator) {

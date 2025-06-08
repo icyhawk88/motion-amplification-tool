@@ -464,4 +464,563 @@ class EnhancedMotionAnalysisEngine {
             console.log(`✅ Enhanced motion analysis complete in ${analysisTime}ms`);
             
             // Store in history
-            this.analysisHistory.push({\n                ...this.results,\n                analysisTime: parseFloat(analysisTime)\n            });\n            \n            // Keep only last 10 analyses\n            if (this.analysisHistory.length > 10) {\n                this.analysisHistory.shift();\n            }\n            \n        } catch (error) {\n            console.error('Motion analysis failed:', error);\n        }\n    }\n    \n    async calculateMotionStatistics(originalFrames, processedFrames) {\n        if (!originalFrames.length || !processedFrames.length) return;\n        \n        let totalMotion = 0;\n        let maxMotion = 0;\n        const motionValues = [];\n        \n        // Calculate frame-to-frame motion\n        for (let i = 1; i < originalFrames.length; i++) {\n            const motion = this.calculateFrameMotion(\n                originalFrames[i-1], \n                originalFrames[i]\n            );\n            \n            motionValues.push(motion);\n            totalMotion += motion;\n            maxMotion = Math.max(maxMotion, motion);\n        }\n        \n        // Statistical calculations\n        const avgMotion = totalMotion / motionValues.length;\n        const variance = motionValues.reduce((sum, val) => \n            sum + Math.pow(val - avgMotion, 2), 0) / motionValues.length;\n        const stdDev = Math.sqrt(variance);\n        \n        // Frequency analysis (simplified)\n        const dominantFreq = this.findDominantFrequency(motionValues);\n        \n        // Update results\n        this.results.peakFrequency = dominantFreq.toFixed(2);\n        this.results.averageAmplitude = avgMotion;\n        this.results.motionIntensity = this.classifyMotionIntensity(avgMotion);\n        this.results.dominantMotion = this.analyzeDominantMotion(motionValues);\n        \n        this.results.statistics = {\n            totalFrames: originalFrames.length,\n            avgMotion: avgMotion.toFixed(4),\n            maxMotion: maxMotion.toFixed(4),\n            stdDev: stdDev.toFixed(4),\n            variance: variance.toFixed(4),\n            dominantFrequency: dominantFreq.toFixed(2)\n        };\n    }\n    \n    calculateFrameMotion(frame1, frame2) {\n        const data1 = frame1.data;\n        const data2 = frame2.data;\n        let totalDiff = 0;\n        let pixelCount = 0;\n        \n        // Sample every 4th pixel for performance\n        for (let i = 0; i < data1.length; i += 16) {\n            const r1 = data1[i], g1 = data1[i+1], b1 = data1[i+2];\n            const r2 = data2[i], g2 = data2[i+1], b2 = data2[i+2];\n            \n            const diff = Math.sqrt(\n                Math.pow(r2 - r1, 2) + \n                Math.pow(g2 - g1, 2) + \n                Math.pow(b2 - b1, 2)\n            );\n            \n            totalDiff += diff;\n            pixelCount++;\n        }\n        \n        return totalDiff / pixelCount / 255.0; // Normalized\n    }\n    \n    findDominantFrequency(motionValues) {\n        // Simple FFT-like analysis for dominant frequency\n        const sampleRate = 30; // Assume 30 FPS\n        const nyquist = sampleRate / 2;\n        \n        // Find peaks in motion data\n        const peaks = [];\n        for (let i = 1; i < motionValues.length - 1; i++) {\n            if (motionValues[i] > motionValues[i-1] && \n                motionValues[i] > motionValues[i+1] && \n                motionValues[i] > 0.1) {\n                peaks.push(i);\n            }\n        }\n        \n        if (peaks.length < 2) return 0;\n        \n        // Calculate average peak interval\n        const intervals = [];\n        for (let i = 1; i < peaks.length; i++) {\n            intervals.push(peaks[i] - peaks[i-1]);\n        }\n        \n        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;\n        return Math.min(sampleRate / avgInterval, nyquist);\n    }\n    \n    classifyMotionIntensity(avgMotion) {\n        if (avgMotion < 0.01) return 'Very Low';\n        if (avgMotion < 0.03) return 'Low';\n        if (avgMotion < 0.06) return 'Medium';\n        if (avgMotion < 0.1) return 'High';\n        return 'Very High';\n    }\n    \n    analyzeDominantMotion(motionValues) {\n        // Analyze motion patterns\n        const trends = [];\n        for (let i = 1; i < motionValues.length; i++) {\n            trends.push(motionValues[i] - motionValues[i-1]);\n        }\n        \n        const increasing = trends.filter(t => t > 0).length;\n        const decreasing = trends.filter(t => t < 0).length;\n        \n        if (increasing > decreasing * 1.5) return 'Increasing';\n        if (decreasing > increasing * 1.5) return 'Decreasing';\n        \n        const variance = trends.reduce((sum, val) => {\n            const mean = trends.reduce((a, b) => a + b, 0) / trends.length;\n            return sum + Math.pow(val - mean, 2);\n        }, 0) / trends.length;\n        \n        if (variance > 0.01) return 'Oscillatory';\n        return 'Steady';\n    }\n    \n    async generateMotionData(frames) {\n        const motionData = [];\n        \n        for (let i = 1; i < frames.length; i++) {\n            const motion = this.calculateFrameMotion(frames[i-1], frames[i]);\n            motionData.push(motion);\n        }\n        \n        // Smooth the data\n        this.results.motionData = this.smoothData(motionData, 3);\n    }\n    \n    smoothData(data, windowSize) {\n        const smoothed = [];\n        const halfWindow = Math.floor(windowSize / 2);\n        \n        for (let i = 0; i < data.length; i++) {\n            let sum = 0;\n            let count = 0;\n            \n            for (let j = Math.max(0, i - halfWindow); \n                 j <= Math.min(data.length - 1, i + halfWindow); j++) {\n                sum += data[j];\n                count++;\n            }\n            \n            smoothed.push(sum / count);\n        }\n        \n        return smoothed;\n    }\n    \n    async generateHeatmap(frames) {\n        if (!frames.length) return;\n        \n        const width = frames[0].width;\n        const height = frames[0].height;\n        const heatmapData = new Array(width * height).fill(0);\n        \n        // Calculate motion intensity per pixel\n        for (let i = 1; i < Math.min(frames.length, 10); i++) {\n            const frame1 = frames[i-1];\n            const frame2 = frames[i];\n            \n            for (let y = 0; y < height; y++) {\n                for (let x = 0; x < width; x++) {\n                    const idx = (y * width + x) * 4;\n                    const heatIdx = y * width + x;\n                    \n                    const r1 = frame1.data[idx], g1 = frame1.data[idx+1], b1 = frame1.data[idx+2];\n                    const r2 = frame2.data[idx], g2 = frame2.data[idx+1], b2 = frame2.data[idx+2];\n                    \n                    const diff = Math.sqrt(\n                        Math.pow(r2 - r1, 2) + \n                        Math.pow(g2 - g1, 2) + \n                        Math.pow(b2 - b1, 2)\n                    ) / 255.0;\n                    \n                    heatmapData[heatIdx] += diff;\n                }\n            }\n        }\n        \n        // Normalize\n        const maxVal = Math.max(...heatmapData);\n        if (maxVal > 0) {\n            for (let i = 0; i < heatmapData.length; i++) {\n                heatmapData[i] /= maxVal;\n            }\n        }\n        \n        this.results.heatmapData = heatmapData;\n    }\n    \n    async generateSpectrum(frames) {\n        const motionData = this.results.motionData;\n        if (!motionData.length) return;\n        \n        // Simple frequency analysis\n        const spectrumData = [];\n        const numBins = 50;\n        const maxFreq = 15; // Hz\n        \n        for (let bin = 0; bin < numBins; bin++) {\n            const freq = (bin / numBins) * maxFreq;\n            let magnitude = 0;\n            \n            // Calculate magnitude for this frequency\n            for (let i = 0; i < motionData.length; i++) {\n                const phase = 2 * Math.PI * freq * i / 30; // 30 FPS\n                magnitude += motionData[i] * Math.cos(phase);\n            }\n            \n            spectrumData.push(Math.abs(magnitude) / motionData.length);\n        }\n        \n        this.results.spectrumData = spectrumData;\n    }\n    \n    async analyzeFrequencyDomain(frames) {\n        // Additional frequency domain analysis\n        console.log('📊 Analyzing frequency domain...');\n    }\n    \n    async calculateSpatialAnalysis(frames) {\n        // Spatial motion pattern analysis\n        console.log('📊 Analyzing spatial patterns...');\n    }\n    \n    getResults() {\n        return this.results;\n    }\n    \n    getHistory() {\n        return this.analysisHistory;\n    }\n    \n    exportResults(format = 'json') {\n        const data = {\n            results: this.results,\n            history: this.analysisHistory,\n            exportTime: new Date().toISOString(),\n            version: '2.0.0'\n        };\n        \n        switch (format.toLowerCase()) {\n            case 'csv':\n                return this.exportToCSV(data);\n            case 'json':\n            default:\n                return JSON.stringify(data, null, 2);\n        }\n    }\n    \n    exportToCSV(data) {\n        const rows = [\n            ['Metric', 'Value'],\n            ['Peak Frequency (Hz)', data.results.peakFrequency],\n            ['Average Amplitude', data.results.averageAmplitude],\n            ['Motion Intensity', data.results.motionIntensity],\n            ['Dominant Motion', data.results.dominantMotion],\n            ['Total Frames', data.results.statistics?.totalFrames || 0],\n            ['Analysis Time', data.exportTime]\n        ];\n        \n        return rows.map(row => row.join(',')).join('\\n');\n    }\n    \n    reset() {\n        this.results = {\n            peakFrequency: 0,\n            averageAmplitude: 0,\n            motionIntensity: 'Low',\n            dominantMotion: 'None',\n            motionData: [],\n            heatmapData: [],\n            spectrumData: [],\n            statistics: {},\n            timestamp: null\n        };\n        \n        console.log('📊 Enhanced motion analysis reset');\n    }\n}\n\n/**\n * Enhanced VideoExportManager - Professional video export capabilities\n */\nclass EnhancedVideoExportManager {\n    constructor() {\n        this.mediaRecorder = null;\n        this.recordedChunks = [];\n        this.isRecording = false;\n        this.recordingStartTime = null;\n        this.supportedFormats = this.detectSupportedFormats();\n    }\n    \n    detectSupportedFormats() {\n        const formats = {\n            webm: MediaRecorder.isTypeSupported('video/webm'),\n            mp4: MediaRecorder.isTypeSupported('video/mp4'),\n            'webm;codecs=vp9': MediaRecorder.isTypeSupported('video/webm;codecs=vp9'),\n            'webm;codecs=vp8': MediaRecorder.isTypeSupported('video/webm;codecs=vp8'),\n            'mp4;codecs=h264': MediaRecorder.isTypeSupported('video/mp4;codecs=h264')\n        };\n        \n        console.log('🎬 Supported video formats:', formats);\n        return formats;\n    }\n    \n    async exportVideo(frames, frameRate, options = {}) {\n        const {\n            format = 'webm',\n            quality = 0.8,\n            width = null,\n            height = null\n        } = options;\n        \n        console.log(`🎬 Exporting ${frames.length} frames as ${format}...`);\n        \n        try {\n            // Method 1: Canvas-based video export\n            if (frames.length > 0) {\n                await this.exportAsCanvasVideo(frames, frameRate, options);\n            } else {\n                throw new Error('No frames to export');\n            }\n        } catch (error) {\n            console.error('Video export failed:', error);\n            // Fallback: Export as image sequence\n            await this.exportAsImageSequence(frames);\n        }\n    }\n    \n    async exportAsCanvasVideo(frames, frameRate, options) {\n        return new Promise((resolve, reject) => {\n            try {\n                const canvas = document.createElement('canvas');\n                const ctx = canvas.getContext('2d');\n                \n                // Set canvas size\n                canvas.width = options.width || frames[0].width;\n                canvas.height = options.height || frames[0].height;\n                \n                // Create video stream from canvas\n                const stream = canvas.captureStream(frameRate);\n                \n                // Setup MediaRecorder\n                const mimeType = this.getBestMimeType(options.format);\n                this.mediaRecorder = new MediaRecorder(stream, {\n                    mimeType: mimeType,\n                    videoBitsPerSecond: 2500000 // 2.5 Mbps\n                });\n                \n                this.recordedChunks = [];\n                \n                this.mediaRecorder.ondataavailable = (event) => {\n                    if (event.data.size > 0) {\n                        this.recordedChunks.push(event.data);\n                    }\n                };\n                \n                this.mediaRecorder.onstop = () => {\n                    const blob = new Blob(this.recordedChunks, { type: mimeType });\n                    this.downloadBlob(blob, `motion_amplified_${Date.now()}.${this.getFileExtension(mimeType)}`);\n                    resolve();\n                };\n                \n                this.mediaRecorder.onerror = (error) => {\n                    console.error('MediaRecorder error:', error);\n                    reject(error);\n                };\n                \n                // Start recording\n                this.mediaRecorder.start();\n                \n                // Render frames\n                let frameIndex = 0;\n                const frameInterval = 1000 / frameRate;\n                \n                const renderFrame = () => {\n                    if (frameIndex >= frames.length) {\n                        this.mediaRecorder.stop();\n                        return;\n                    }\n                    \n                    ctx.putImageData(frames[frameIndex], 0, 0);\n                    frameIndex++;\n                    \n                    setTimeout(renderFrame, frameInterval);\n                };\n                \n                renderFrame();\n                \n            } catch (error) {\n                reject(error);\n            }\n        });\n    }\n    \n    async exportAsImageSequence(frames) {\n        console.log('🖼️ Exporting as image sequence...');\n        \n        for (let i = 0; i < frames.length; i++) {\n            const canvas = document.createElement('canvas');\n            const ctx = canvas.getContext('2d');\n            \n            canvas.width = frames[i].width;\n            canvas.height = frames[i].height;\n            ctx.putImageData(frames[i], 0, 0);\n            \n            await new Promise(resolve => {\n                canvas.toBlob((blob) => {\n                    const frameNumber = String(i).padStart(4, '0');\n                    this.downloadBlob(blob, `motion_frame_${frameNumber}.png`);\n                    resolve();\n                }, 'image/png');\n            });\n            \n            // Small delay to prevent overwhelming the browser\n            if (i % 10 === 0) {\n                await new Promise(resolve => setTimeout(resolve, 100));\n            }\n        }\n        \n        console.log('✅ Image sequence export complete');\n    }\n    \n    getBestMimeType(format) {\n        const preferences = {\n            webm: ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'],\n            mp4: ['video/mp4;codecs=h264', 'video/mp4']\n        };\n        \n        const formatPrefs = preferences[format] || preferences.webm;\n        \n        for (const mimeType of formatPrefs) {\n            if (this.supportedFormats[mimeType]) {\n                return mimeType;\n            }\n        }\n        \n        // Fallback\n        return 'video/webm';\n    }\n    \n    getFileExtension(mimeType) {\n        if (mimeType.includes('mp4')) return 'mp4';\n        if (mimeType.includes('webm')) return 'webm';\n        return 'video';\n    }\n    \n    downloadBlob(blob, filename) {\n        const url = URL.createObjectURL(blob);\n        const a = document.createElement('a');\n        a.href = url;\n        a.download = filename;\n        document.body.appendChild(a);\n        a.click();\n        document.body.removeChild(a);\n        URL.revokeObjectURL(url);\n    }\n    \n    startRecording(canvas, options = {}) {\n        if (this.isRecording) {\n            console.warn('Recording already in progress');\n            return;\n        }\n        \n        try {\n            const stream = canvas.captureStream(options.frameRate || 30);\n            const mimeType = this.getBestMimeType(options.format || 'webm');\n            \n            this.mediaRecorder = new MediaRecorder(stream, {\n                mimeType: mimeType,\n                videoBitsPerSecond: options.bitrate || 2500000\n            });\n            \n            this.recordedChunks = [];\n            this.recordingStartTime = Date.now();\n            \n            this.mediaRecorder.ondataavailable = (event) => {\n                if (event.data.size > 0) {\n                    this.recordedChunks.push(event.data);\n                }\n            };\n            \n            this.mediaRecorder.start();\n            this.isRecording = true;\n            \n            console.log('🔴 Recording started');\n            \n        } catch (error) {\n            console.error('Failed to start recording:', error);\n        }\n    }\n    \n    stopRecording() {\n        if (!this.isRecording || !this.mediaRecorder) {\n            console.warn('No recording in progress');\n            return;\n        }\n        \n        return new Promise((resolve) => {\n            this.mediaRecorder.onstop = () => {\n                const mimeType = this.mediaRecorder.mimeType;\n                const blob = new Blob(this.recordedChunks, { type: mimeType });\n                const duration = (Date.now() - this.recordingStartTime) / 1000;\n                \n                this.downloadBlob(blob, `motion_recording_${Date.now()}.${this.getFileExtension(mimeType)}`);\n                \n                console.log(`✅ Recording stopped. Duration: ${duration.toFixed(1)}s`);\n                \n                this.isRecording = false;\n                this.recordingStartTime = null;\n                resolve();\n            };\n            \n            this.mediaRecorder.stop();\n        });\n    }\n    \n    getRecordingStatus() {\n        return {\n            isRecording: this.isRecording,\n            duration: this.recordingStartTime ? (Date.now() - this.recordingStartTime) / 1000 : 0,\n            supportedFormats: this.supportedFormats\n        };\n    }\n}\n\n// Export classes for use\nif (typeof window !== 'undefined') {\n    window.EnhancedWebcamManager = EnhancedWebcamManager;\n    window.EnhancedROISelector = EnhancedROISelector;\n    window.EnhancedMotionAnalysisEngine = EnhancedMotionAnalysisEngine;\n    window.EnhancedVideoExportManager = EnhancedVideoExportManager;\n}\n\nconsole.log('✅ Enhanced supporting classes loaded successfully!');
+            this.analysisHistory.push({
+                ...this.results,
+                analysisTime: parseFloat(analysisTime)
+            });
+            
+            // Keep only last 10 analyses
+            if (this.analysisHistory.length > 10) {
+                this.analysisHistory.shift();
+            }
+            
+        } catch (error) {
+            console.error('Motion analysis failed:', error);
+        }
+    }
+    
+    async calculateMotionStatistics(originalFrames, processedFrames) {
+        if (!originalFrames.length || !processedFrames.length) return;
+        
+        let totalMotion = 0;
+        let maxMotion = 0;
+        const motionValues = [];
+        
+        // Calculate frame-to-frame motion
+        for (let i = 1; i < originalFrames.length; i++) {
+            const motion = this.calculateFrameMotion(
+                originalFrames[i-1], 
+                originalFrames[i]
+            );
+            
+            motionValues.push(motion);
+            totalMotion += motion;
+            maxMotion = Math.max(maxMotion, motion);
+        }
+        
+        // Statistical calculations
+        const avgMotion = totalMotion / motionValues.length;
+        const variance = motionValues.reduce((sum, val) => 
+            sum + Math.pow(val - avgMotion, 2), 0) / motionValues.length;
+        const stdDev = Math.sqrt(variance);
+        
+        // Frequency analysis (simplified)
+        const dominantFreq = this.findDominantFrequency(motionValues);
+        
+        // Update results
+        this.results.peakFrequency = dominantFreq.toFixed(2);
+        this.results.averageAmplitude = avgMotion;
+        this.results.motionIntensity = this.classifyMotionIntensity(avgMotion);
+        this.results.dominantMotion = this.analyzeDominantMotion(motionValues);
+        
+        this.results.statistics = {
+            totalFrames: originalFrames.length,
+            avgMotion: avgMotion.toFixed(4),
+            maxMotion: maxMotion.toFixed(4),
+            stdDev: stdDev.toFixed(4),
+            variance: variance.toFixed(4),
+            dominantFrequency: dominantFreq.toFixed(2)
+        };
+    }
+    
+    calculateFrameMotion(frame1, frame2) {
+        const data1 = frame1.data;
+        const data2 = frame2.data;
+        let totalDiff = 0;
+        let pixelCount = 0;
+        
+        // Sample every 4th pixel for performance
+        for (let i = 0; i < data1.length; i += 16) {
+            const r1 = data1[i], g1 = data1[i+1], b1 = data1[i+2];
+            const r2 = data2[i], g2 = data2[i+1], b2 = data2[i+2];
+            
+            const diff = Math.sqrt(
+                Math.pow(r2 - r1, 2) + 
+                Math.pow(g2 - g1, 2) + 
+                Math.pow(b2 - b1, 2)
+            );
+            
+            totalDiff += diff;
+            pixelCount++;
+        }
+        
+        return totalDiff / pixelCount / 255.0; // Normalized
+    }
+    
+    findDominantFrequency(motionValues) {
+        // Simple FFT-like analysis for dominant frequency
+        const sampleRate = 30; // Assume 30 FPS
+        const nyquist = sampleRate / 2;
+        
+        // Find peaks in motion data
+        const peaks = [];
+        for (let i = 1; i < motionValues.length - 1; i++) {
+            if (motionValues[i] > motionValues[i-1] && 
+                motionValues[i] > motionValues[i+1] && 
+                motionValues[i] > 0.1) {
+                peaks.push(i);
+            }
+        }
+        
+        if (peaks.length < 2) return 0;
+        
+        // Calculate average peak interval
+        const intervals = [];
+        for (let i = 1; i < peaks.length; i++) {
+            intervals.push(peaks[i] - peaks[i-1]);
+        }
+        
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        return Math.min(sampleRate / avgInterval, nyquist);
+    }
+    
+    classifyMotionIntensity(avgMotion) {
+        if (avgMotion < 0.01) return 'Very Low';
+        if (avgMotion < 0.03) return 'Low';
+        if (avgMotion < 0.06) return 'Medium';
+        if (avgMotion < 0.1) return 'High';
+        return 'Very High';
+    }
+    
+    analyzeDominantMotion(motionValues) {
+        // Analyze motion patterns
+        const trends = [];
+        for (let i = 1; i < motionValues.length; i++) {
+            trends.push(motionValues[i] - motionValues[i-1]);
+        }
+        
+        const increasing = trends.filter(t => t > 0).length;
+        const decreasing = trends.filter(t => t < 0).length;
+        
+        if (increasing > decreasing * 1.5) return 'Increasing';
+        if (decreasing > increasing * 1.5) return 'Decreasing';
+        
+        const variance = trends.reduce((sum, val) => {
+            const mean = trends.reduce((a, b) => a + b, 0) / trends.length;
+            return sum + Math.pow(val - mean, 2);
+        }, 0) / trends.length;
+        
+        if (variance > 0.01) return 'Oscillatory';
+        return 'Steady';
+    }
+    
+    async generateMotionData(frames) {
+        const motionData = [];
+        
+        for (let i = 1; i < frames.length; i++) {
+            const motion = this.calculateFrameMotion(frames[i-1], frames[i]);
+            motionData.push(motion);
+        }
+        
+        // Smooth the data
+        this.results.motionData = this.smoothData(motionData, 3);
+    }
+    
+    smoothData(data, windowSize) {
+        const smoothed = [];
+        const halfWindow = Math.floor(windowSize / 2);
+        
+        for (let i = 0; i < data.length; i++) {
+            let sum = 0;
+            let count = 0;
+            
+            for (let j = Math.max(0, i - halfWindow); 
+                 j <= Math.min(data.length - 1, i + halfWindow); j++) {
+                sum += data[j];
+                count++;
+            }
+            
+            smoothed.push(sum / count);
+        }
+        
+        return smoothed;
+    }
+    
+    async generateHeatmap(frames) {
+        if (!frames.length) return;
+        
+        const width = frames[0].width;
+        const height = frames[0].height;
+        const heatmapData = new Array(width * height).fill(0);
+        
+        // Calculate motion intensity per pixel
+        for (let i = 1; i < Math.min(frames.length, 10); i++) {
+            const frame1 = frames[i-1];
+            const frame2 = frames[i];
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    const heatIdx = y * width + x;
+                    
+                    const r1 = frame1.data[idx], g1 = frame1.data[idx+1], b1 = frame1.data[idx+2];
+                    const r2 = frame2.data[idx], g2 = frame2.data[idx+1], b2 = frame2.data[idx+2];
+                    
+                    const diff = Math.sqrt(
+                        Math.pow(r2 - r1, 2) + 
+                        Math.pow(g2 - g1, 2) + 
+                        Math.pow(b2 - b1, 2)
+                    ) / 255.0;
+                    
+                    heatmapData[heatIdx] += diff;
+                }
+            }
+        }
+        
+        // Normalize
+        const maxVal = Math.max(...heatmapData);
+        if (maxVal > 0) {
+            for (let i = 0; i < heatmapData.length; i++) {
+                heatmapData[i] /= maxVal;
+            }
+        }
+        
+        this.results.heatmapData = heatmapData;
+    }
+    
+    async generateSpectrum(frames) {
+        const motionData = this.results.motionData;
+        if (!motionData.length) return;
+        
+        // Simple frequency analysis
+        const spectrumData = [];
+        const numBins = 50;
+        const maxFreq = 15; // Hz
+        
+        for (let bin = 0; bin < numBins; bin++) {
+            const freq = (bin / numBins) * maxFreq;
+            let magnitude = 0;
+            
+            // Calculate magnitude for this frequency
+            for (let i = 0; i < motionData.length; i++) {
+                const phase = 2 * Math.PI * freq * i / 30; // 30 FPS
+                magnitude += motionData[i] * Math.cos(phase);
+            }
+            
+            spectrumData.push(Math.abs(magnitude) / motionData.length);
+        }
+        
+        this.results.spectrumData = spectrumData;
+    }
+    
+    async analyzeFrequencyDomain(frames) {
+        // Additional frequency domain analysis
+        console.log('📊 Analyzing frequency domain...');
+    }
+    
+    async calculateSpatialAnalysis(frames) {
+        // Spatial motion pattern analysis
+        console.log('📊 Analyzing spatial patterns...');
+    }
+    
+    getResults() {
+        return this.results;
+    }
+    
+    getHistory() {
+        return this.analysisHistory;
+    }
+    
+    exportResults(format = 'json') {
+        const data = {
+            results: this.results,
+            history: this.analysisHistory,
+            exportTime: new Date().toISOString(),
+            version: '2.0.0'
+        };
+        
+        switch (format.toLowerCase()) {
+            case 'csv':
+                return this.exportToCSV(data);
+            case 'json':
+            default:
+                return JSON.stringify(data, null, 2);
+        }
+    }
+    
+    exportToCSV(data) {
+        const rows = [
+            ['Metric', 'Value'],
+            ['Peak Frequency (Hz)', data.results.peakFrequency],
+            ['Average Amplitude', data.results.averageAmplitude],
+            ['Motion Intensity', data.results.motionIntensity],
+            ['Dominant Motion', data.results.dominantMotion],
+            ['Total Frames', data.results.statistics?.totalFrames || 0],
+            ['Analysis Time', data.exportTime]
+        ];
+        
+        return rows.map(row => row.join(',')).join('\n');
+    }
+    
+    reset() {
+        this.results = {
+            peakFrequency: 0,
+            averageAmplitude: 0,
+            motionIntensity: 'Low',
+            dominantMotion: 'None',
+            motionData: [],
+            heatmapData: [],
+            spectrumData: [],
+            statistics: {},
+            timestamp: null
+        };
+        
+        console.log('📊 Enhanced motion analysis reset');
+    }
+}
+
+/**
+ * Enhanced VideoExportManager - Professional video export capabilities
+ */
+class EnhancedVideoExportManager {
+    constructor() {
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.isRecording = false;
+        this.recordingStartTime = null;
+        this.supportedFormats = this.detectSupportedFormats();
+    }
+    
+    detectSupportedFormats() {
+        const formats = {
+            webm: MediaRecorder.isTypeSupported('video/webm'),
+            mp4: MediaRecorder.isTypeSupported('video/mp4'),
+            'webm;codecs=vp9': MediaRecorder.isTypeSupported('video/webm;codecs=vp9'),
+            'webm;codecs=vp8': MediaRecorder.isTypeSupported('video/webm;codecs=vp8'),
+            'mp4;codecs=h264': MediaRecorder.isTypeSupported('video/mp4;codecs=h264')
+        };
+        
+        console.log('🎬 Supported video formats:', formats);
+        return formats;
+    }
+    
+    async exportVideo(frames, frameRate, options = {}) {
+        const {
+            format = 'webm',
+            quality = 0.8,
+            width = null,
+            height = null
+        } = options;
+        
+        console.log(`🎬 Exporting ${frames.length} frames as ${format}...`);
+        
+        try {
+            // Method 1: Canvas-based video export
+            if (frames.length > 0) {
+                await this.exportAsCanvasVideo(frames, frameRate, options);
+            } else {
+                throw new Error('No frames to export');
+            }
+        } catch (error) {
+            console.error('Video export failed:', error);
+            // Fallback: Export as image sequence
+            await this.exportAsImageSequence(frames);
+        }
+    }
+    
+    async exportAsCanvasVideo(frames, frameRate, options) {
+        return new Promise((resolve, reject) => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size
+                canvas.width = options.width || frames[0].width;
+                canvas.height = options.height || frames[0].height;
+                
+                // Create video stream from canvas
+                const stream = canvas.captureStream(frameRate);
+                
+                // Setup MediaRecorder
+                const mimeType = this.getBestMimeType(options.format);
+                this.mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 2500000 // 2.5 Mbps
+                });
+                
+                this.recordedChunks = [];
+                
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.recordedChunks.push(event.data);
+                    }
+                };
+                
+                this.mediaRecorder.onstop = () => {
+                    const blob = new Blob(this.recordedChunks, { type: mimeType });
+                    this.downloadBlob(blob, `motion_amplified_${Date.now()}.${this.getFileExtension(mimeType)}`);
+                    resolve();
+                };
+                
+                this.mediaRecorder.onerror = (error) => {
+                    console.error('MediaRecorder error:', error);
+                    reject(error);
+                };
+                
+                // Start recording
+                this.mediaRecorder.start();
+                
+                // Render frames
+                let frameIndex = 0;
+                const frameInterval = 1000 / frameRate;
+                
+                const renderFrame = () => {
+                    if (frameIndex >= frames.length) {
+                        this.mediaRecorder.stop();
+                        return;
+                    }
+                    
+                    ctx.putImageData(frames[frameIndex], 0, 0);
+                    frameIndex++;
+                    
+                    setTimeout(renderFrame, frameInterval);
+                };
+                
+                renderFrame();
+                
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+    
+    async exportAsImageSequence(frames) {
+        console.log('🖼️ Exporting as image sequence...');
+        
+        for (let i = 0; i < frames.length; i++) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = frames[i].width;
+            canvas.height = frames[i].height;
+            ctx.putImageData(frames[i], 0, 0);
+            
+            await new Promise(resolve => {
+                canvas.toBlob((blob) => {
+                    const frameNumber = String(i).padStart(4, '0');
+                    this.downloadBlob(blob, `motion_frame_${frameNumber}.png`);
+                    resolve();
+                }, 'image/png');
+            });
+            
+            // Small delay to prevent overwhelming the browser
+            if (i % 10 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        console.log('✅ Image sequence export complete');
+    }
+    
+    getBestMimeType(format) {
+        const preferences = {
+            webm: ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'],
+            mp4: ['video/mp4;codecs=h264', 'video/mp4']
+        };
+        
+        const formatPrefs = preferences[format] || preferences.webm;
+        
+        for (const mimeType of formatPrefs) {
+            if (this.supportedFormats[mimeType]) {
+                return mimeType;
+            }
+        }
+        
+        // Fallback
+        return 'video/webm';
+    }
+    
+    getFileExtension(mimeType) {
+        if (mimeType.includes('mp4')) return 'mp4';
+        if (mimeType.includes('webm')) return 'webm';
+        return 'video';
+    }
+    
+    downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    startRecording(canvas, options = {}) {
+        if (this.isRecording) {
+            console.warn('Recording already in progress');
+            return;
+        }
+        
+        try {
+            const stream = canvas.captureStream(options.frameRate || 30);
+            const mimeType = this.getBestMimeType(options.format || 'webm');
+            
+            this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: mimeType,
+                videoBitsPerSecond: options.bitrate || 2500000
+            });
+            
+            this.recordedChunks = [];
+            this.recordingStartTime = Date.now();
+            
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                }
+            };
+            
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            
+            console.log('🔴 Recording started');
+            
+        } catch (error) {
+            console.error('Failed to start recording:', error);
+        }
+    }
+    
+    stopRecording() {
+        if (!this.isRecording || !this.mediaRecorder) {
+            console.warn('No recording in progress');
+            return;
+        }
+        
+        return new Promise((resolve) => {
+            this.mediaRecorder.onstop = () => {
+                const mimeType = this.mediaRecorder.mimeType;
+                const blob = new Blob(this.recordedChunks, { type: mimeType });
+                const duration = (Date.now() - this.recordingStartTime) / 1000;
+                
+                this.downloadBlob(blob, `motion_recording_${Date.now()}.${this.getFileExtension(mimeType)}`);
+                
+                console.log(`✅ Recording stopped. Duration: ${duration.toFixed(1)}s`);
+                
+                this.isRecording = false;
+                this.recordingStartTime = null;
+                resolve();
+            };
+            
+            this.mediaRecorder.stop();
+        });
+    }
+    
+    getRecordingStatus() {
+        return {
+            isRecording: this.isRecording,
+            duration: this.recordingStartTime ? (Date.now() - this.recordingStartTime) / 1000 : 0,
+            supportedFormats: this.supportedFormats
+        };
+    }
+}
+
+// Export classes for use
+if (typeof window !== 'undefined') {
+    window.EnhancedWebcamManager = EnhancedWebcamManager;
+    window.EnhancedROISelector = EnhancedROISelector;
+    window.EnhancedMotionAnalysisEngine = EnhancedMotionAnalysisEngine;
+    window.EnhancedVideoExportManager = EnhancedVideoExportManager;
+}
+
+console.log('✅ Enhanced supporting classes loaded successfully!');
