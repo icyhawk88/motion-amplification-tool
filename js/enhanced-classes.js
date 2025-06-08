@@ -115,24 +115,31 @@ class EnhancedWebcamManager {
     }
     
     async start(deviceId = null) {
+        console.log('🎥 [DEBUG] EnhancedWebcamManager.start() called with deviceId:', deviceId);
         this.updateStatus('Initializing camera...', 'info');
         
         try {
             if (this.isActive) {
+                console.log('🎥 [DEBUG] Camera already active, stopping first');
                 await this.stop();
             }
             
+            console.log('🎥 [DEBUG] Checking permissions...');
             // Check permissions first
             await this.checkPermissions();
             
+            console.log('🎥 [DEBUG] Starting camera initialization with fallbacks...');
             // Try multiple constraint profiles with retry logic
             const stream = await this.initializeCameraWithFallbacks(deviceId);
+            console.log('🎥 [DEBUG] Got stream:', stream);
             this.stream = stream;
             this.currentDeviceId = deviceId;
             
+            console.log('🎥 [DEBUG] Setting up video elements...');
             // Setup DOM elements with error checking
             await this.setupVideoElements();
             
+            console.log('🎥 [DEBUG] Getting track information...');
             // Get capabilities and settings with error handling
             this.getTrackInformation();
             
@@ -142,10 +149,11 @@ class EnhancedWebcamManager {
             
             const resolution = `${this.video.videoWidth}x${this.video.videoHeight}`;
             const message = `Camera started successfully at ${resolution}`;
-            console.log(`✅ ${message}`);
+            console.log(`✅ [DEBUG] ${message}`);
             this.updateStatus(message, 'success');
             
         } catch (error) {
+            console.error('❌ [DEBUG] Camera start failed in EnhancedWebcamManager:', error);
             this.logError('Camera start failed', error);
             throw this.createUserFriendlyError(error);
         }
@@ -172,38 +180,46 @@ class EnhancedWebcamManager {
     }
     
     async initializeCameraWithFallbacks(deviceId) {
+        console.log('🎥 [DEBUG] initializeCameraWithFallbacks() called with deviceId:', deviceId);
         this.updateStatus('Requesting camera access...', 'info');
         
         for (let profileIndex = 0; profileIndex < this.constraintProfiles.length; profileIndex++) {
             const profile = this.constraintProfiles[profileIndex];
             const constraints = this.buildConstraints(profile, deviceId);
             
-            console.log(`🎥 Trying ${profile.name} profile:`, constraints);
+            console.log(`🎥 [DEBUG] Trying ${profile.name} profile:`, constraints);
             this.updateStatus(`Trying ${profile.name} settings...`, 'info');
             
             for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
                 try {
+                    console.log(`🎥 [DEBUG] Attempt ${attempt}/${this.maxRetries} for ${profile.name}`);
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    console.log(`✅ ${profile.name} profile successful on attempt ${attempt}`);
+                    console.log(`✅ [DEBUG] ${profile.name} profile successful on attempt ${attempt}`);
                     return stream;
                     
                 } catch (error) {
                     const errorInfo = this.analyzeError(error);
-                    console.warn(`❌ ${profile.name} profile failed (attempt ${attempt}/${this.maxRetries}):`, errorInfo.message);
+                    console.warn(`❌ [DEBUG] ${profile.name} profile failed (attempt ${attempt}/${this.maxRetries}):`, errorInfo.message);
+                    console.warn(`❌ [DEBUG] Raw error:`, error);
                     
                     // If it's a permission error, don't retry
                     if (errorInfo.type === 'permission') {
+                        console.error('❌ [DEBUG] Permission error, not retrying');
                         throw error;
                     }
                     
                     // If it's not the last attempt, wait before retrying
                     if (attempt < this.maxRetries) {
-                        await this.delay(this.retryDelay * attempt);
+                        const delayMs = this.retryDelay * attempt;
+                        console.log(`🕰️ [DEBUG] Waiting ${delayMs}ms before retry...`);
+                        await this.delay(delayMs);
                     }
                 }
             }
+            console.warn(`❌ [DEBUG] All attempts failed for ${profile.name}, trying next profile...`);
         }
         
+        console.error('❌ [DEBUG] All camera profiles failed!');
         throw new Error('INITIALIZATION_FAILED');
     }
     
@@ -226,17 +242,25 @@ class EnhancedWebcamManager {
     }
     
     async setupVideoElements() {
+        console.log('🎥 [DEBUG] setupVideoElements() called');
         // Get DOM elements with error checking
         this.video = document.getElementById('webcamVideo');
         this.canvas = document.getElementById('webcamCanvas');
         
+        console.log('🎥 [DEBUG] Found DOM elements:', {
+            video: !!this.video,
+            canvas: !!this.canvas
+        });
+        
         if (!this.video || !this.canvas) {
+            console.error('❌ [DEBUG] Required webcam elements not found in DOM');
             throw new Error('ELEMENTS_NOT_FOUND');
         }
         
         this.ctx = this.canvas.getContext('2d');
         
         // Setup video element with comprehensive error handling
+        console.log('🎥 [DEBUG] Setting up video element...');
         this.video.srcObject = this.stream;
         this.video.autoplay = true;
         this.video.muted = true;
@@ -245,9 +269,11 @@ class EnhancedWebcamManager {
         this.updateStatus('Loading video...', 'info');
         
         // Wait for video to be ready with multiple event listeners
+        console.log('🎥 [DEBUG] Waiting for video to load...');
         await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
                 cleanup();
+                console.error('❌ [DEBUG] Video load timeout after 10 seconds');
                 reject(new Error('VIDEO_LOAD_TIMEOUT'));
             }, 10000);
             
@@ -259,17 +285,19 @@ class EnhancedWebcamManager {
             };
             
             const onSuccess = () => {
+                console.log('✅ [DEBUG] Video loaded successfully!');
                 cleanup();
                 resolve();
             };
             
             const onError = (e) => {
+                console.error('❌ [DEBUG] Video load error:', e);
                 cleanup();
                 reject(new Error('VIDEO_LOAD_ERROR: ' + (e.message || 'Unknown error')));
             };
             
             const onLoadStart = () => {
-                console.log('📹 Video loading started...');
+                console.log('🎥 [DEBUG] Video loading started...');
             };
             
             this.video.addEventListener('loadedmetadata', onSuccess, { once: true });
@@ -278,10 +306,17 @@ class EnhancedWebcamManager {
         });
         
         // Setup canvas size with validation
+        console.log('🎥 [DEBUG] Video dimensions:', {
+            videoWidth: this.video.videoWidth,
+            videoHeight: this.video.videoHeight
+        });
+        
         if (this.video.videoWidth && this.video.videoHeight) {
             this.canvas.width = this.video.videoWidth;
             this.canvas.height = this.video.videoHeight;
+            console.log('✅ [DEBUG] Canvas size set to:', this.canvas.width, 'x', this.canvas.height);
         } else {
+            console.error('❌ [DEBUG] Invalid video dimensions');
             throw new Error('INVALID_VIDEO_DIMENSIONS');
         }
     }

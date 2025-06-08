@@ -371,6 +371,8 @@ Ready to reveal the invisible world! 🎬⚡
     }
     
     setupEventListeners() {
+        console.log('🔧 [DEBUG] Setting up event listeners');
+        
         // Mode switching
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -400,10 +402,42 @@ Ready to reveal the invisible world! 🎬⚡
         document.getElementById('roiToggle')?.addEventListener('click', this.toggleROI.bind(this));
         document.getElementById('realTimeToggle')?.addEventListener('click', this.toggleRealTime.bind(this));
         
-        // Webcam controls
-        document.getElementById('startWebcam')?.addEventListener('click', this.startWebcam.bind(this));
-        document.getElementById('stopWebcam')?.addEventListener('click', this.stopWebcam.bind(this));
-        document.getElementById('recordBtn')?.addEventListener('click', this.toggleRecording.bind(this));
+        // Webcam controls - with debug logging
+        const startWebcamBtn = document.getElementById('startWebcam');
+        const stopWebcamBtn = document.getElementById('stopWebcam');
+        const recordBtn = document.getElementById('recordBtn');
+        
+        console.log('🔧 [DEBUG] Webcam buttons found:', {
+            startWebcam: !!startWebcamBtn,
+            stopWebcam: !!stopWebcamBtn,
+            recordBtn: !!recordBtn
+        });
+        
+        if (startWebcamBtn) {
+            startWebcamBtn.addEventListener('click', (e) => {
+                console.log('🎥 [DEBUG] Start webcam button clicked!');
+                e.preventDefault();
+                this.startWebcam();
+            });
+        } else {
+            console.warn('⚠️ [DEBUG] Start webcam button not found!');
+        }
+        
+        if (stopWebcamBtn) {
+            stopWebcamBtn.addEventListener('click', (e) => {
+                console.log('🛑 [DEBUG] Stop webcam button clicked!');
+                e.preventDefault();
+                this.stopWebcam();
+            });
+        }
+        
+        if (recordBtn) {
+            recordBtn.addEventListener('click', (e) => {
+                console.log('🔴 [DEBUG] Record button clicked!');
+                e.preventDefault();
+                this.toggleRecording();
+            });
+        }
         
         // Preset buttons
         document.querySelectorAll('.preset-btn').forEach(btn => {
@@ -428,6 +462,8 @@ Ready to reveal the invisible world! 🎬⚡
         
         // Window events
         window.addEventListener('beforeunload', this.cleanup.bind(this));
+        
+        console.log('✅ [DEBUG] Event listeners setup complete');
     }
     
     switchMode(mode) {
@@ -931,30 +967,50 @@ Ready to reveal the invisible world! 🎬⚡
     
     // Enhanced webcam processing methods
     async startWebcam() {
+        console.log('🎥 [DEBUG] startWebcam() called');
         const selectedDevice = document.getElementById('cameraSelect')?.value;
+        console.log('🎥 [DEBUG] Selected device:', selectedDevice);
         
         try {
+            // Verify webcam manager exists
+            if (!this.webcamManager) {
+                console.error('❌ [DEBUG] Webcam manager not initialized');
+                this.updateStatus('Webcam manager not available. Please refresh the page.', 'error');
+                return;
+            }
+            
+            console.log('🎥 [DEBUG] Webcam manager status:', this.webcamManager.getStatus());
+            
             // Setup status callback for real-time updates
             this.webcamManager.setStatusCallback((message, type) => {
+                console.log(`🎥 [DEBUG] Status callback: ${message} (${type})`);
                 this.updateStatus(message, type === 'success' ? 'complete' : type);
             });
             
+            console.log('🎥 [DEBUG] About to call webcamManager.start()');
+            
             // Attempt to start with selected device
             await this.webcamManager.start(selectedDevice || null);
+            
+            console.log('🎥 [DEBUG] webcamManager.start() completed successfully');
             
             // Update UI on successful start
             this.updateWebcamUI(true);
             
             // Start real-time processing if enabled
             if (this.realTimeEnabled) {
+                console.log('🎥 [DEBUG] Starting real-time processing');
                 this.startRealTimeProcessing();
             }
             
             // Update camera select dropdown if needed
             await this.updateCameraSelectOptions();
             
+            console.log('🎥 [DEBUG] startWebcam() completed successfully');
+            
         } catch (error) {
-            console.error('Webcam start failed:', error);
+            console.error('❌ [DEBUG] Webcam start failed:', error);
+            console.error('❌ [DEBUG] Error stack:', error.stack);
             
             // Use the enhanced error information if available
             const errorMessage = error.userAction ? 
@@ -1878,6 +1934,80 @@ window.motionAmpDebug = {
         
         console.log('Debug Info:', debug);
         return debug;
+    },
+    
+    // Manual camera test function
+    testCamera: async () => {
+        console.log('🧪 [DEBUG] Manual camera test starting...');
+        
+        if (!window.motionAmp) {
+            console.error('❌ Motion Amplifier not initialized');
+            return false;
+        }
+        
+        if (!window.motionAmp.webcamManager) {
+            console.error('❌ Webcam manager not available');
+            return false;
+        }
+        
+        try {
+            console.log('🎥 [DEBUG] Calling startWebcam() manually...');
+            await window.motionAmp.startWebcam();
+            console.log('✅ [DEBUG] Manual camera test successful!');
+            return true;
+        } catch (error) {
+            console.error('❌ [DEBUG] Manual camera test failed:', error);
+            return false;
+        }
+    },
+    
+    // Check DOM elements
+    checkWebcamElements: () => {
+        const elements = {
+            startWebcam: document.getElementById('startWebcam'),
+            stopWebcam: document.getElementById('stopWebcam'),
+            recordBtn: document.getElementById('recordBtn'),
+            cameraSelect: document.getElementById('cameraSelect'),
+            webcamVideo: document.getElementById('webcamVideo'),
+            webcamCanvas: document.getElementById('webcamCanvas'),
+            webcamMode: document.getElementById('webcamMode')
+        };
+        
+        console.log('🔍 [DEBUG] Webcam DOM elements:', elements);
+        
+        const missing = Object.keys(elements).filter(key => !elements[key]);
+        if (missing.length > 0) {
+            console.warn('⚠️ [DEBUG] Missing elements:', missing);
+        } else {
+            console.log('✅ [DEBUG] All webcam elements found');
+        }
+        
+        return elements;
+    },
+    
+    // Test basic WebRTC
+    testWebRTC: async () => {
+        console.log('🧪 [DEBUG] Testing basic WebRTC...');
+        
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('❌ WebRTC not supported');
+            return false;
+        }
+        
+        try {
+            console.log('🎥 [DEBUG] Requesting basic camera access...');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            console.log('✅ [DEBUG] Basic camera access successful');
+            
+            // Stop the stream
+            stream.getTracks().forEach(track => track.stop());
+            console.log('🛑 [DEBUG] Test stream stopped');
+            
+            return true;
+        } catch (error) {
+            console.error('❌ [DEBUG] Basic WebRTC test failed:', error);
+            return false;
+        }
     },
     
     // Test functions
