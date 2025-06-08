@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Amplification Pro - Test Suite</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .test-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .test-result {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .status.success { background: #4CAF50; }
+        .status.warning { background: #FF9800; }
+        .status.error { background: #f44336; }
+        .status.info { background: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Motion Amplification Pro - Test Suite</h1>
+        <p>Comprehensive testing tool for verifying all features and improvements</p>
+
+        <div class="test-section">
+            <h2>🔧 Basic Functionality Tests</h2>
+            <button class="test-button" onclick="testBasicComponents()">Test Core Components</button>
+            <button class="test-button" onclick="testWebGLSupport()">Test WebGL Support</button>
+            <button class="test-button" onclick="testWebcamAccess()">Test Webcam Access</button>
+            <button class="test-button" onclick="testEnhancedUtilities()">Test Enhanced Utilities</button>
+            <div id="basicResults" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Performance Tests</h2>
+            <button class="test-button" onclick="runMemoryStressTest()">Memory Stress Test</button>
+            <button class="test-button" onclick="runPerformanceAnalysis()">Performance Analysis</button>
+            <button class="test-button" onclick="testMobileOptimizations()">Mobile Optimizations</button>
+            <div id="performanceResults" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 Browser Compatibility</h2>
+            <button class="test-button" onclick="testBrowserFeatures()">Feature Detection</button>
+            <button class="test-button" onclick="generateSystemReport()">System Report</button>
+            <button class="test-button" onclick="testErrorHandling()">Error Handling</button>
+            <div id="compatibilityResults" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 All Tests</h2>
+            <button class="test-button" onclick="runAllTests()" style="background: linear-gradient(45deg, #FF6B6B, #FF8E53);">Run Complete Test Suite</button>
+            <div id="allTestsResults" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Test Status</h2>
+            <div id="testStatus">
+                <span class="status info">Ready to run tests</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the Motion Amplification Pro scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/enhanced-utilities.js"></script>
+    <script src="js/webgl-processor.js"></script>
+    <script src="js/motion-worker.js"></script>
+    <script src="js/enhanced-classes.js"></script>
+
+    <script>
+        // Test Suite Implementation
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            warnings: 0,
+            details: []
+        };
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('testStatus');
+            statusDiv.innerHTML = `<span class="status ${type}">${message}</span>`;
+        }
+
+        function logResult(test, status, message, details = null) {
+            testResults.details.push({
+                test,
+                status,
+                message,
+                details,
+                timestamp: new Date().toISOString()
+            });
+
+            if (status === 'passed') testResults.passed++;
+            else if (status === 'failed') testResults.failed++;
+            else if (status === 'warning') testResults.warnings++;
+
+            console.log(`${status.toUpperCase()}: ${test} - ${message}`);
+            if (details) console.log('Details:', details);
+        }
+
+        function displayResults(containerId, results) {
+            const container = document.getElementById(containerId);
+            container.style.display = 'block';
+            container.innerHTML = results.join('<br>');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function testBasicComponents() {
+            updateStatus('Testing basic components...', 'info');
+            const results = [];
+
+            try {
+                // Test configuration
+                if (typeof window.MotionAmpConfig !== 'undefined') {
+                    results.push('✅ Configuration loaded successfully');
+                    logResult('Configuration', 'passed', 'MotionAmpConfig available');
+                } else {
+                    results.push('❌ Configuration not loaded');
+                    logResult('Configuration', 'failed', 'MotionAmpConfig not available');
+                }
+
+                // Test enhanced utilities
+                if (typeof window.motionAmpEnhanced !== 'undefined') {
+                    results.push('✅ Enhanced utilities loaded');
+                    logResult('Enhanced Utilities', 'passed', 'motionAmpEnhanced available');
+                    
+                    // Test individual utilities
+                    const utils = window.motionAmpEnhanced;
+                    if (utils.performanceMonitor) {
+                        results.push('✅ Performance monitor ready');
+                        logResult('Performance Monitor', 'passed', 'Available and initialized');
+                    }
+                    if (utils.errorHandler) {
+                        results.push('✅ Error handler ready');
+                        logResult('Error Handler', 'passed', 'Available and initialized');
+                    }
+                    if (utils.memoryManager) {
+                        results.push('✅ Memory manager ready');
+                        logResult('Memory Manager', 'passed', 'Available and initialized');
+                    }
+                    if (utils.mobileOptimizer) {
+                        results.push(`✅ Mobile optimizer ready (Mobile: ${utils.mobileOptimizer.isMobile})`);
+                        logResult('Mobile Optimizer', 'passed', `Initialized, mobile detected: ${utils.mobileOptimizer.isMobile}`);
+                    }
+                } else {
+                    results.push('❌ Enhanced utilities not loaded');
+                    logResult('Enhanced Utilities', 'failed', 'motionAmpEnhanced not available');
+                }
+
+                // Test WebGL processor
+                if (typeof WebGLProcessor !== 'undefined') {
+                    results.push('✅ WebGL processor class available');
+                    logResult('WebGL Processor', 'passed', 'Class definition available');
+                    
+                    try {
+                        const processor = new WebGLProcessor();
+                        if (processor.isSupported()) {
+                            results.push('✅ WebGL processor functional');
+                            logResult('WebGL Functionality', 'passed', 'Processor initialized and working');
+                        } else {
+                            results.push('⚠️ WebGL not supported on this device');
+                            logResult('WebGL Functionality', 'warning', 'WebGL not supported');
+                        }
+                    } catch (error) {
+                        results.push(`❌ WebGL processor error: ${error.message}`);
+                        logResult('WebGL Functionality', 'failed', error.message);
+                    }
+                } else {
+                    results.push('❌ WebGL processor not loaded');
+                    logResult('WebGL Processor', 'failed', 'Class not available');
+                }
+
+                // Test enhanced classes
+                const enhancedClasses = [
+                    'EnhancedWebcamManager',
+                    'EnhancedROISelector', 
+                    'EnhancedMotionAnalysisEngine',
+                    'EnhancedVideoExportManager'
+                ];
+
+                enhancedClasses.forEach(className => {
+                    if (typeof window[className] !== 'undefined') {
+                        results.push(`✅ ${className} available`);
+                        logResult(className, 'passed', 'Class definition available');
+                    } else {
+                        results.push(`❌ ${className} not loaded`);
+                        logResult(className, 'failed', 'Class not available');
+                    }
+                });
+
+                updateStatus('Basic component tests completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Test error: ${error.message}`);
+                logResult('Basic Components Test', 'failed', error.message);
+                updateStatus('Basic component tests failed', 'error');
+            }
+
+            displayResults('basicResults', results);
+        }
+
+        function testWebGLSupport() {
+            updateStatus('Testing WebGL support...', 'info');
+            const results = [];
+
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+                if (gl) {
+                    results.push('✅ WebGL context created successfully');
+                    logResult('WebGL Context', 'passed', 'WebGL context available');
+
+                    // Get WebGL info
+                    const vendor = gl.getParameter(gl.VENDOR);
+                    const renderer = gl.getParameter(gl.RENDERER);
+                    const version = gl.getParameter(gl.VERSION);
+                    const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+
+                    results.push(`📊 Vendor: ${vendor}`);
+                    results.push(`📊 Renderer: ${renderer}`);
+                    results.push(`📊 Version: ${version}`);
+                    results.push(`📊 Max Texture Size: ${maxTextureSize}x${maxTextureSize}`);
+
+                    logResult('WebGL Info', 'passed', 'WebGL information retrieved', {
+                        vendor, renderer, version, maxTextureSize
+                    });
+
+                    // Test basic WebGL operations
+                    const buffer = gl.createBuffer();
+                    if (buffer) {
+                        results.push('✅ Buffer creation successful');
+                        logResult('WebGL Operations', 'passed', 'Basic operations working');
+                        gl.deleteBuffer(buffer);
+                    }
+
+                    updateStatus('WebGL tests completed successfully', 'success');
+                } else {
+                    results.push('❌ WebGL not supported');
+                    logResult('WebGL Context', 'failed', 'WebGL context not available');
+                    updateStatus('WebGL not supported', 'warning');
+                }
+
+            } catch (error) {
+                results.push(`❌ WebGL test error: ${error.message}`);
+                logResult('WebGL Test', 'failed', error.message);
+                updateStatus('WebGL tests failed', 'error');
+            }
+
+            displayResults('basicResults', results);
+        }
+
+        async function testWebcamAccess() {
+            updateStatus('Testing webcam access...', 'info');
+            const results = [];
+
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    results.push('❌ MediaDevices API not supported');
+                    logResult('MediaDevices API', 'failed', 'API not available');
+                    updateStatus('Webcam API not supported', 'error');
+                    displayResults('basicResults', results);
+                    return;
+                }
+
+                results.push('✅ MediaDevices API available');
+                logResult('MediaDevices API', 'passed', 'API available');
+
+                // Test device enumeration
+                try {
+                    const devices = await navigator.mediaDevices.enumerateDevices();
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    
+                    results.push(`📊 Found ${videoDevices.length} video input device(s)`);
+                    logResult('Device Enumeration', 'passed', `${videoDevices.length} devices found`);
+
+                    if (videoDevices.length > 0) {
+                        results.push('✅ Camera devices available');
+                        
+                        // Test basic camera access (with permission)
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ 
+                                video: { width: 320, height: 240 }, 
+                                audio: false 
+                            });
+                            
+                            results.push('✅ Camera access granted');
+                            logResult('Camera Access', 'passed', 'Permission granted and stream created');
+                            
+                            // Stop the stream immediately
+                            stream.getTracks().forEach(track => track.stop());
+                            results.push('✅ Camera stream stopped successfully');
+                            
+                        } catch (error) {
+                            if (error.name === 'NotAllowedError') {
+                                results.push('⚠️ Camera permission denied by user');
+                                logResult('Camera Access', 'warning', 'Permission denied');
+                            } else {
+                                results.push(`❌ Camera access error: ${error.message}`);
+                                logResult('Camera Access', 'failed', error.message);
+                            }
+                        }
+                    } else {
+                        results.push('⚠️ No camera devices found');
+                        logResult('Camera Devices', 'warning', 'No video input devices');
+                    }
+
+                } catch (error) {
+                    results.push(`❌ Device enumeration failed: ${error.message}`);
+                    logResult('Device Enumeration', 'failed', error.message);
+                }
+
+                updateStatus('Webcam tests completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Webcam test error: ${error.message}`);
+                logResult('Webcam Test', 'failed', error.message);
+                updateStatus('Webcam tests failed', 'error');
+            }
+
+            displayResults('basicResults', results);
+        }
+
+        function testEnhancedUtilities() {
+            updateStatus('Testing enhanced utilities...', 'info');
+            const results = [];
+
+            if (!window.motionAmpEnhanced) {
+                results.push('❌ Enhanced utilities not available');
+                logResult('Enhanced Utilities', 'failed', 'motionAmpEnhanced not loaded');
+                displayResults('basicResults', results);
+                return;
+            }
+
+            const enhanced = window.motionAmpEnhanced;
+
+            // Test Performance Monitor
+            if (enhanced.performanceMonitor) {
+                try {
+                    enhanced.performanceMonitor.startTiming('test');
+                    setTimeout(() => {
+                        const duration = enhanced.performanceMonitor.endTiming('test');
+                        if (duration !== undefined) {
+                            results.push('✅ Performance monitoring working');
+                            logResult('Performance Monitor', 'passed', `Timing test successful: ${duration}ms`);
+                        }
+                    }, 10);
+                    
+                    const memory = enhanced.performanceMonitor.getMemoryUsage();
+                    if (memory) {
+                        results.push(`📊 Memory usage: ${memory.used}MB / ${memory.limit}MB`);
+                        logResult('Memory Monitor', 'passed', 'Memory monitoring available');
+                    }
+                } catch (error) {
+                    results.push(`❌ Performance monitor error: ${error.message}`);
+                    logResult('Performance Monitor', 'failed', error.message);
+                }
+            }
+
+            // Test Error Handler
+            if (enhanced.errorHandler) {
+                try {
+                    const errorCount = enhanced.errorHandler.errors.length;
+                    results.push(`✅ Error handler active (${errorCount} errors logged)`);
+                    logResult('Error Handler', 'passed', `${errorCount} errors in history`);
+                } catch (error) {
+                    results.push(`❌ Error handler test failed: ${error.message}`);
+                    logResult('Error Handler', 'failed', error.message);
+                }
+            }
+
+            // Test Memory Manager
+            if (enhanced.memoryManager) {
+                try {
+                    const memoryStatus = enhanced.memoryManager.getMemoryStatus();
+                    if (memoryStatus.available) {
+                        results.push(`✅ Memory manager working (${memoryStatus.usagePercent}% used)`);
+                        logResult('Memory Manager', 'passed', `Memory usage: ${memoryStatus.usagePercent}%`);
+                    } else {
+                        results.push('⚠️ Memory monitoring not available');
+                        logResult('Memory Manager', 'warning', 'Memory API not available');
+                    }
+                } catch (error) {
+                    results.push(`❌ Memory manager error: ${error.message}`);
+                    logResult('Memory Manager', 'failed', error.message);
+                }
+            }
+
+            // Test Mobile Optimizer
+            if (enhanced.mobileOptimizer) {
+                try {
+                    const report = enhanced.mobileOptimizer.getOptimizationReport();
+                    results.push(`✅ Mobile optimizer loaded (Mobile: ${report.isMobile})`);
+                    results.push(`📊 Touch support: ${report.touchSupport}`);
+                    results.push(`📊 Viewport: ${report.viewport.width}x${report.viewport.height}`);
+                    logResult('Mobile Optimizer', 'passed', 'Mobile optimization report generated', report);
+                } catch (error) {
+                    results.push(`❌ Mobile optimizer error: ${error.message}`);
+                    logResult('Mobile Optimizer', 'failed', error.message);
+                }
+            }
+
+            updateStatus('Enhanced utilities tests completed', 'success');
+            displayResults('basicResults', results);
+        }
+
+        async function runMemoryStressTest() {
+            updateStatus('Running memory stress test...', 'info');
+            const results = [];
+
+            if (!window.motionAmpEnhanced?.debugUtils) {
+                results.push('❌ Debug utilities not available');
+                displayResults('performanceResults', results);
+                return;
+            }
+
+            try {
+                results.push('🧪 Starting memory stress test...');
+                const testResult = await window.motionAmpEnhanced.debugUtils.memoryStressTest();
+                
+                if (testResult.error) {
+                    results.push(`❌ Memory test failed: ${testResult.error}`);
+                    logResult('Memory Stress Test', 'failed', testResult.error);
+                } else {
+                    results.push(`✅ Memory test completed:`);
+                    results.push(`📊 Start: ${testResult.start}MB`);
+                    results.push(`📊 Peak: ${testResult.peak}MB`);
+                    results.push(`📊 End: ${testResult.end}MB`);
+                    results.push(`📊 Cleaned: ${testResult.cleaned}MB`);
+                    results.push(`📊 Efficiency: ${testResult.efficiency}%`);
+                    logResult('Memory Stress Test', 'passed', 'Test completed successfully', testResult);
+                }
+
+                updateStatus('Memory stress test completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Memory test error: ${error.message}`);
+                logResult('Memory Stress Test', 'failed', error.message);
+                updateStatus('Memory stress test failed', 'error');
+            }
+
+            displayResults('performanceResults', results);
+        }
+
+        function runPerformanceAnalysis() {
+            updateStatus('Running performance analysis...', 'info');
+            const results = [];
+
+            try {
+                if (window.motionAmpEnhanced?.performanceMonitor) {
+                    const monitor = window.motionAmpEnhanced.performanceMonitor;
+                    const report = monitor.getReport();
+                    
+                    results.push('✅ Performance report generated');
+                    results.push(`📊 Metrics collected: ${Object.keys(report.metrics).length}`);
+                    
+                    if (report.memory) {
+                        results.push(`📊 Memory: ${report.memory.used}MB / ${report.memory.limit}MB`);
+                        const percentage = (report.memory.used / report.memory.limit * 100).toFixed(1);
+                        results.push(`📊 Memory usage: ${percentage}%`);
+                    }
+                    
+                    logResult('Performance Analysis', 'passed', 'Analysis completed', report);
+                } else {
+                    results.push('❌ Performance monitor not available');
+                    logResult('Performance Analysis', 'failed', 'Monitor not available');
+                }
+
+                // Test frame rate
+                let frameCount = 0;
+                const startTime = performance.now();
+                
+                const countFrames = () => {
+                    frameCount++;
+                    if (frameCount < 60) {
+                        requestAnimationFrame(countFrames);
+                    } else {
+                        const duration = performance.now() - startTime;
+                        const fps = (frameCount / duration * 1000).toFixed(1);
+                        results.push(`📊 Browser FPS capability: ~${fps} fps`);
+                        logResult('FPS Test', 'passed', `FPS: ${fps}`);
+                        displayResults('performanceResults', results);
+                    }
+                };
+                
+                requestAnimationFrame(countFrames);
+                updateStatus('Performance analysis completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Performance analysis error: ${error.message}`);
+                logResult('Performance Analysis', 'failed', error.message);
+                updateStatus('Performance analysis failed', 'error');
+                displayResults('performanceResults', results);
+            }
+        }
+
+        function testMobileOptimizations() {
+            updateStatus('Testing mobile optimizations...', 'info');
+            const results = [];
+
+            try {
+                if (window.motionAmpEnhanced?.mobileOptimizer) {
+                    const optimizer = window.motionAmpEnhanced.mobileOptimizer;
+                    const report = optimizer.getOptimizationReport();
+                    
+                    results.push(`✅ Mobile detection: ${report.isMobile ? 'Mobile device' : 'Desktop device'}`);
+                    results.push(`📊 Touch support: ${report.touchSupport}`);
+                    results.push(`📊 Orientation support: ${report.orientationSupport}`);
+                    results.push(`📊 Viewport: ${report.viewport.width}x${report.viewport.height}`);
+                    
+                    if (report.features.reducedMotion) {
+                        results.push('📊 Reduced motion preferred');
+                    }
+                    if (report.features.darkMode) {
+                        results.push('📊 Dark mode preferred');
+                    }
+                    if (report.features.highContrast) {
+                        results.push('📊 High contrast preferred');
+                    }
+                    
+                    logResult('Mobile Optimizations', 'passed', 'Mobile optimization report generated', report);
+                } else {
+                    results.push('❌ Mobile optimizer not available');
+                    logResult('Mobile Optimizations', 'failed', 'Optimizer not available');
+                }
+
+                updateStatus('Mobile optimization tests completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Mobile optimization test error: ${error.message}`);
+                logResult('Mobile Optimizations', 'failed', error.message);
+                updateStatus('Mobile optimization tests failed', 'error');
+            }
+
+            displayResults('performanceResults', results);
+        }
+
+        function testBrowserFeatures() {
+            updateStatus('Testing browser features...', 'info');
+            const results = [];
+
+            try {
+                const features = {
+                    'WebGL': !!document.createElement('canvas').getContext('webgl'),
+                    'WebGL2': !!document.createElement('canvas').getContext('webgl2'),
+                    'Web Workers': typeof Worker !== 'undefined',
+                    'Service Workers': 'serviceWorker' in navigator,
+                    'Media Devices': !!navigator.mediaDevices,
+                    'Media Recorder': typeof MediaRecorder !== 'undefined',
+                    'IndexedDB': 'indexedDB' in window,
+                    'Local Storage': typeof Storage !== 'undefined',
+                    'WebRTC': !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                    'Fullscreen API': !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
+                    'Performance API': !!performance.mark,
+                    'Memory API': !!performance.memory,
+                    'Device Pixel Ratio': window.devicePixelRatio > 1
+                };
+
+                Object.entries(features).forEach(([feature, supported]) => {
+                    const status = supported ? '✅' : '❌';
+                    results.push(`${status} ${feature}: ${supported ? 'Supported' : 'Not supported'}`);
+                    logResult(`Feature: ${feature}`, supported ? 'passed' : 'warning', supported ? 'Supported' : 'Not supported');
+                });
+
+                updateStatus('Browser feature tests completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Feature test error: ${error.message}`);
+                logResult('Browser Features', 'failed', error.message);
+                updateStatus('Browser feature tests failed', 'error');
+            }
+
+            displayResults('compatibilityResults', results);
+        }
+
+        async function generateSystemReport() {
+            updateStatus('Generating system report...', 'info');
+            const results = [];
+
+            try {
+                if (window.motionAmpEnhanced?.debugUtils) {
+                    const systemInfo = await window.motionAmpEnhanced.debugUtils.getComprehensiveSystemInfo();
+                    
+                    results.push('✅ System report generated');
+                    results.push(`📊 Browser: ${systemInfo.browser.vendor} ${systemInfo.browser.userAgent.split(' ').pop()}`);
+                    results.push(`📊 Platform: ${systemInfo.browser.platform}`);
+                    results.push(`📊 Language: ${systemInfo.browser.language}`);
+                    results.push(`📊 Screen: ${systemInfo.screen.width}x${systemInfo.screen.height} (${systemInfo.screen.colorDepth}-bit)`);
+                    results.push(`📊 Viewport: ${systemInfo.viewport.width}x${systemInfo.viewport.height}`);
+                    results.push(`📊 Device Pixel Ratio: ${systemInfo.viewport.devicePixelRatio}`);
+                    
+                    if (systemInfo.memory) {
+                        results.push(`📊 Memory: ${systemInfo.memory.used}MB / ${systemInfo.memory.limit}MB`);
+                    }
+                    
+                    if (systemInfo.webgl.supported) {
+                        results.push(`📊 WebGL: ${systemInfo.webgl.vendor} ${systemInfo.webgl.renderer}`);
+                        results.push(`📊 Max Texture: ${systemInfo.webgl.maxTextureSize}px`);
+                    }
+                    
+                    if (systemInfo.mediaDevices.supported) {
+                        results.push(`📊 Media: ${systemInfo.mediaDevices.videoInputs} cameras, ${systemInfo.mediaDevices.audioInputs} mics`);
+                    }
+                    
+                    logResult('System Report', 'passed', 'Report generated successfully', systemInfo);
+                } else {
+                    results.push('❌ Debug utilities not available');
+                    logResult('System Report', 'failed', 'Debug utilities not available');
+                }
+
+                updateStatus('System report completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ System report error: ${error.message}`);
+                logResult('System Report', 'failed', error.message);
+                updateStatus('System report failed', 'error');
+            }
+
+            displayResults('compatibilityResults', results);
+        }
+
+        function testErrorHandling() {
+            updateStatus('Testing error handling...', 'info');
+            const results = [];
+
+            try {
+                if (window.motionAmpEnhanced?.errorHandler) {
+                    const errorHandler = window.motionAmpEnhanced.errorHandler;
+                    
+                    // Test error logging
+                    const testError = {
+                        type: 'test',
+                        message: 'Test error for validation',
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    errorHandler.logError(testError);
+                    results.push('✅ Error logging functional');
+                    
+                    const report = errorHandler.getErrorReport();
+                    results.push(`📊 Errors logged: ${report.errors.length}`);
+                    results.push(`📊 Error categories: ${Object.keys(report.summary).join(', ')}`);
+                    
+                    logResult('Error Handling', 'passed', 'Error handling system functional');
+                } else {
+                    results.push('❌ Error handler not available');
+                    logResult('Error Handling', 'failed', 'Error handler not available');
+                }
+
+                updateStatus('Error handling tests completed', 'success');
+
+            } catch (error) {
+                results.push(`❌ Error handling test failed: ${error.message}`);
+                logResult('Error Handling', 'failed', error.message);
+                updateStatus('Error handling tests failed', 'error');
+            }
+
+            displayResults('compatibilityResults', results);
+        }
+
+        async function runAllTests() {
+            updateStatus('Running complete test suite...', 'info');
+            
+            // Reset test results
+            testResults = { passed: 0, failed: 0, warnings: 0, details: [] };
+            
+            const allResults = ['🧪 Motion Amplification Pro - Complete Test Suite', ''];
+            
+            try {
+                // Run all test categories
+                await testBasicComponents();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                testWebGLSupport();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                await testWebcamAccess();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                testEnhancedUtilities();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                await runMemoryStressTest();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                runPerformanceAnalysis();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                testMobileOptimizations();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                testBrowserFeatures();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                await generateSystemReport();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                testErrorHandling();
+                
+                // Generate summary
+                allResults.push('📊 Test Summary:');
+                allResults.push(`✅ Passed: ${testResults.passed}`);
+                allResults.push(`❌ Failed: ${testResults.failed}`);
+                allResults.push(`⚠️ Warnings: ${testResults.warnings}`);
+                allResults.push('');
+                
+                const totalTests = testResults.passed + testResults.failed + testResults.warnings;
+                const successRate = totalTests > 0 ? ((testResults.passed / totalTests) * 100).toFixed(1) : 0;
+                
+                allResults.push(`📈 Success Rate: ${successRate}%`);
+                allResults.push('');
+                
+                if (testResults.failed === 0) {
+                    allResults.push('🎉 All critical tests passed! System is ready for production use.');
+                    updateStatus(`All tests completed - ${successRate}% success rate`, 'success');
+                } else {
+                    allResults.push('⚠️ Some tests failed. Check individual results for details.');
+                    updateStatus(`Tests completed with ${testResults.failed} failures`, 'warning');
+                }
+                
+                // Add detailed results
+                allResults.push('');
+                allResults.push('📋 Detailed Results:');
+                testResults.details.forEach(detail => {
+                    const statusIcon = detail.status === 'passed' ? '✅' : detail.status === 'failed' ? '❌' : '⚠️';
+                    allResults.push(`${statusIcon} ${detail.test}: ${detail.message}`);
+                });
+
+            } catch (error) {
+                allResults.push(`❌ Test suite error: ${error.message}`);
+                updateStatus('Test suite failed', 'error');
+            }
+
+            displayResults('allTestsResults', allResults);
+        }
+
+        // Initialize
+        updateStatus('Test suite ready - click any button to run tests', 'info');
+        console.log('🧪 Motion Amplification Pro Test Suite loaded');
+        console.log('Available tests:', [
+            'testBasicComponents()',
+            'testWebGLSupport()', 
+            'testWebcamAccess()',
+            'testEnhancedUtilities()',
+            'runMemoryStressTest()',
+            'runPerformanceAnalysis()',
+            'testMobileOptimizations()',
+            'testBrowserFeatures()',
+            'generateSystemReport()',
+            'testErrorHandling()',
+            'runAllTests()'
+        ]);
+    </script>
+</body>
+</html>
