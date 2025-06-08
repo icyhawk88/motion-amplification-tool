@@ -1222,10 +1222,16 @@ video, canvas {
 /* Hide mode panels by default */
 .mode-panel {
     display: none;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 .mode-panel.active {
     display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Custom scrollbar */
@@ -1316,4 +1322,436 @@ select:focus {
 
 @keyframes processing-spin {
     to { transform: rotate(360deg); }
+}
+
+/* Enhanced Webcam Status Styles */
+.webcam-status {
+    margin: 15px 0;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    border: 1px solid;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.webcam-status::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.6s ease;
+}
+
+.webcam-status:hover::before {
+    left: 100%;
+}
+
+.webcam-status.success {
+    background: rgba(76, 175, 80, 0.2);
+    color: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.webcam-status.info {
+    background: rgba(66, 165, 245, 0.2);
+    color: var(--info);
+    border-color: var(--info);
+    box-shadow: 0 0 10px rgba(66, 165, 245, 0.3);
+}
+
+.webcam-status.error {
+    background: rgba(239, 83, 80, 0.2);
+    color: var(--error);
+    border-color: var(--error);
+    box-shadow: 0 0 10px rgba(239, 83, 80, 0.3);
+    animation: shake 0.5s ease-in-out;
+}
+
+.webcam-status.warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--warning);
+    border-color: var(--warning);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Retry Button Styles */
+.retry-webcam-btn {
+    background: linear-gradient(45deg, #FF9800, #FF6B35) !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 20px !important;
+    border-radius: 25px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+    margin-left: 10px !important;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4) !important;
+}
+
+.retry-webcam-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transition: all 0.5s ease;
+    transform: translate(-50%, -50%);
+}
+
+.retry-webcam-btn:hover:not(:disabled)::before {
+    width: 300px;
+    height: 300px;
+}
+
+.retry-webcam-btn:hover:not(:disabled) {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(255, 152, 0, 0.6) !important;
+    background: linear-gradient(45deg, #FF6B35, #FF9800) !important;
+}
+
+.retry-webcam-btn:active {
+    transform: translateY(-1px) !important;
+}
+
+/* Enhanced Camera Select Styles */
+.camera-select {
+    background: var(--glass-bg) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--glass-border) !important;
+    padding: 12px 16px !important;
+    border-radius: 25px !important;
+    backdrop-filter: blur(10px) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    min-width: 180px !important;
+    cursor: pointer !important;
+}
+
+.camera-select:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: var(--info) !important;
+    box-shadow: 0 0 10px rgba(66, 165, 245, 0.3) !important;
+}
+
+.camera-select:focus {
+    outline: none !important;
+    border-color: var(--success) !important;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4) !important;
+}
+
+.camera-select option {
+    background: rgba(30, 30, 50, 0.95);
+    color: var(--text-primary);
+    padding: 8px;
+}
+
+/* Enhanced Webcam Controls */
+.webcam-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.webcam-btn {
+    background: var(--secondary-gradient) !important;
+    color: white !important;
+    border: none !important;
+    padding: 14px 22px !important;
+    border-radius: 25px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4) !important;
+}
+
+.webcam-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.4s ease;
+    transform: translate(-50%, -50%);
+}
+
+.webcam-btn:hover:not(:disabled)::before {
+    width: 300px;
+    height: 300px;
+}
+
+.webcam-btn:hover:not(:disabled) {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6) !important;
+}
+
+.webcam-btn:disabled {
+    background: rgba(255, 255, 255, 0.2) !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    opacity: 0.5 !important;
+    box-shadow: none !important;
+}
+
+.webcam-btn:active:not(:disabled) {
+    transform: translateY(-1px) !important;
+}
+
+/* Enhanced Webcam Container */
+.webcam-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    align-items: center;
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+#webcamVideo, #webcamCanvas {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+#webcamVideo:hover, #webcamCanvas:hover {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.02);
+}
+
+/* Webcam Loading States */
+.webcam-loading {
+    position: relative;
+}
+
+.webcam-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--success);
+    animation: webcam-loading-spin 1s linear infinite;
+    z-index: 10;
+}
+
+@keyframes webcam-loading-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Permission Denied Overlay */
+.permission-denied-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.permission-denied-content {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    margin: 20px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.permission-denied-content h3 {
+    color: var(--error);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.permission-denied-content p {
+    margin-bottom: 25px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.permission-denied-content button {
+    background: var(--info);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.permission-denied-content button:hover {
+    background: #1976D2;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(25, 118, 210, 0.4);
+}
+
+/* Device Selection Enhancement */
+.device-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
+
+.device-info-icon {
+    color: var(--info);
+    font-size: 1.1rem;
+}
+
+/* Responsive Enhancements for Webcam */
+@media (max-width: 768px) {
+    .webcam-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .webcam-controls {
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .webcam-btn {
+        width: 100%;
+        max-width: 300px;
+        padding: 16px 20px !important;
+    }
+    
+    .retry-webcam-btn {
+        width: 100%;
+        max-width: 300px;
+        margin-left: 0 !important;
+        margin-top: 10px !important;
+    }
+    
+    .camera-select {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+    }
+    
+    .webcam-status {
+        margin: 10px 0;
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .webcam-controls {
+        padding: 10px;
+    }
+    
+    .webcam-btn {
+        padding: 14px 18px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .retry-webcam-btn {
+        padding: 14px 18px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    #webcamVideo, #webcamCanvas {
+        border-radius: 8px;
+    }
+    
+    .permission-denied-content {
+        padding: 30px 20px;
+        margin: 10px;
+    }
+    
+    .permission-denied-content h3 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Diagnostic Information Styles */
+.diagnostics-panel {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.diagnostics-panel h4 {
+    color: var(--info);
+    margin-bottom: 10px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.diagnostics-item {
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+}
+
+.diagnostics-item strong {
+    color: var(--text-primary);
 }

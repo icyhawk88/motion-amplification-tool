@@ -213,14 +213,30 @@ Ready to reveal the invisible world! 🎬⚡
             this.updateFeatureStatus('gpu', 'Not Available');
         }
         
-        // Initialize webcam manager
+        // Initialize enhanced webcam manager with better error handling
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             this.webcamManager = new EnhancedWebcamManager();
-            this.webcamManager.initialize().catch(err => 
-                console.warn('Webcam manager initialization failed:', err)
-            );
-            this.updateFeatureStatus('realtime', 'Ready');
+            
+            // Set up status callback for live updates
+            this.webcamManager.setStatusCallback((message, type) => {
+                console.log(`[Webcam] ${message}`);
+            });
+            
+            // Initialize with graceful error handling
+            this.webcamManager.initialize()
+                .then(() => {
+                    this.updateFeatureStatus('realtime', 'Ready');
+                    console.log('✅ Enhanced webcam manager initialized');
+                })
+                .catch(err => {
+                    console.warn('Webcam manager initialization failed:', err);
+                    this.updateFeatureStatus('realtime', 'Limited');
+                    
+                    // Still allow the app to function, just without webcam
+                    this.updateStatus('Camera features may be limited. Some functionality may not work.', 'warning');
+                });
         } else {
+            console.warn('WebRTC not supported in this browser');
             this.updateFeatureStatus('realtime', 'Not Supported');
         }
         
@@ -438,22 +454,33 @@ Ready to reveal the invisible world! 🎬⚡
     
     async initializeWebcamMode() {
         try {
-            // Populate camera list
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const cameras = devices.filter(device => device.kind === 'videoinput');
-            
-            const select = document.getElementById('cameraSelect');
-            if (select) {
-                select.innerHTML = '<option value="">Select Camera...</option>';
-                cameras.forEach((camera, index) => {
-                    const option = document.createElement('option');
-                    option.value = camera.deviceId;
-                    option.textContent = camera.label || `Camera ${index + 1}`;
-                    select.appendChild(option);
-                });
+            // Initialize the enhanced webcam manager if not already done
+            if (!this.webcamManager.devices.length) {
+                await this.webcamManager.enumerateDevices();
             }
+            
+            // Update camera selection dropdown
+            await this.updateCameraSelectOptions();
+            
+            // Show camera diagnostics in debug mode
+            if (this.debugMode) {
+                console.log('Camera diagnostics:', this.webcamManager.getDiagnostics());
+            }
+            
+            // Check for any previous camera errors and show helpful messages
+            const status = this.webcamManager.getStatus();
+            if (status.errorHistory.length > 0) {
+                const lastError = status.errorHistory[status.errorHistory.length - 1];
+                console.warn('Previous camera error detected:', lastError);
+            }
+            
         } catch (error) {
-            this.updateStatus('Error accessing cameras: ' + error.message, 'error');
+            console.error('Error initializing webcam mode:', error);
+            this.updateStatus('Error accessing camera list: ' + error.message, 'error');
+            
+            // Provide fallback message with troubleshooting tips
+            const troubleshootMsg = 'Try refreshing the page or checking your camera permissions.';
+            this.updateStatus(troubleshootMsg, 'warning');
         }
     }
     
@@ -902,38 +929,179 @@ Ready to reveal the invisible world! 🎬⚡
         requestAnimationFrame(animate);
     }
     
-    // Webcam processing methods
+    // Enhanced webcam processing methods
     async startWebcam() {
+        const selectedDevice = document.getElementById('cameraSelect')?.value;
+        
         try {
-            await this.webcamManager.start();
+            // Setup status callback for real-time updates
+            this.webcamManager.setStatusCallback((message, type) => {
+                this.updateStatus(message, type === 'success' ? 'complete' : type);
+            });
             
-            // Update UI
-            document.getElementById('startWebcam').disabled = true;
-            document.getElementById('stopWebcam').disabled = false;
-            document.getElementById('recordBtn').disabled = false;
+            // Attempt to start with selected device
+            await this.webcamManager.start(selectedDevice || null);
             
-            this.updateStatus('Webcam started successfully!', 'complete');
+            // Update UI on successful start
+            this.updateWebcamUI(true);
             
             // Start real-time processing if enabled
             if (this.realTimeEnabled) {
                 this.startRealTimeProcessing();
             }
             
+            // Update camera select dropdown if needed
+            await this.updateCameraSelectOptions();
+            
         } catch (error) {
-            this.updateStatus('Failed to start webcam: ' + error.message, 'error');
+            console.error('Webcam start failed:', error);
+            
+            // Use the enhanced error information if available
+            const errorMessage = error.userAction ? 
+                `${error.message} (${error.userAction})` : 
+                error.message;
+            
+            this.updateStatus(errorMessage, 'error');
+            
+            // Show retry button for certain error types
+            if (error.errorType === 'busy' || error.errorType === 'timeout') {
+                this.showWebcamRetryOption();
+            }
+            
+            // Reset UI state
+            this.updateWebcamUI(false);
+        }
+    }
+    
+    updateWebcamUI(isActive) {
+        const startBtn = document.getElementById('startWebcam');
+        const stopBtn = document.getElementById('stopWebcam');
+        const recordBtn = document.getElementById('recordBtn');
+        
+        if (startBtn) startBtn.disabled = isActive;
+        if (stopBtn) stopBtn.disabled = !isActive;
+        if (recordBtn) recordBtn.disabled = !isActive;
+        
+        // Update camera status display
+        const statusEl = document.querySelector('.webcam-status') || this.createWebcamStatusElement();
+        if (isActive) {
+            const status = this.webcamManager.getStatus();
+            const resolution = status.resolution ? `${status.resolution.width}x${status.resolution.height}` : 'Unknown';
+            statusEl.textContent = `Camera active at ${resolution}`;
+            statusEl.className = 'webcam-status success';
+        } else {
+            statusEl.textContent = 'Camera not active';
+            statusEl.className = 'webcam-status info';
+        }
+    }
+    
+    createWebcamStatusElement() {
+        const webcamSection = document.getElementById('webcamMode');
+        if (!webcamSection) return null;
+        
+        const statusEl = document.createElement('div');
+        statusEl.className = 'webcam-status';
+        statusEl.style.cssText = `
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        `;
+        
+        webcamSection.appendChild(statusEl);
+        return statusEl;
+    }
+    
+    showWebcamRetryOption() {
+        const webcamControls = document.querySelector('.webcam-controls');
+        if (!webcamControls) return;
+        
+        // Remove existing retry button
+        const existingRetry = webcamControls.querySelector('.retry-webcam-btn');
+        if (existingRetry) {
+            existingRetry.remove();
+        }
+        
+        // Add retry button
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'webcam-btn retry-webcam-btn';
+        retryBtn.textContent = '🔄 Retry Camera';
+        retryBtn.addEventListener('click', () => {
+            retryBtn.remove();
+            this.startWebcam();
+        });
+        
+        webcamControls.appendChild(retryBtn);
+        
+        // Auto-remove after 30 seconds
+        setTimeout(() => {
+            if (retryBtn.parentNode) {
+                retryBtn.remove();
+            }
+        }, 30000);
+    }
+    
+    async updateCameraSelectOptions() {
+        const select = document.getElementById('cameraSelect');
+        if (!select) return;
+        
+        try {
+            const devices = await this.webcamManager.enumerateDevices();
+            
+            // Clear existing options except the first one
+            select.innerHTML = '<option value="">Select Camera...</option>';
+            
+            devices.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.textContent = device.label || `Camera ${index + 1}`;
+                
+                // Mark current device as selected
+                if (device.deviceId === this.webcamManager.currentDeviceId) {
+                    option.selected = true;
+                }
+                
+                select.appendChild(option);
+            });
+            
+            // Add change event listener if not already added
+            if (!select.hasAttribute('data-listener-added')) {
+                select.addEventListener('change', async (e) => {
+                    if (e.target.value && this.webcamManager.isActive) {
+                        try {
+                            await this.webcamManager.switchDevice(e.target.value);
+                        } catch (error) {
+                            console.error('Failed to switch camera:', error);
+                            this.updateStatus('Failed to switch camera: ' + error.message, 'error');
+                        }
+                    }
+                });
+                select.setAttribute('data-listener-added', 'true');
+            }
+            
+        } catch (error) {
+            console.warn('Failed to update camera options:', error);
         }
     }
     
     stopWebcam() {
-        this.webcamManager?.stop();
-        
-        // Update UI
-        document.getElementById('startWebcam').disabled = false;
-        document.getElementById('stopWebcam').disabled = true;
-        document.getElementById('recordBtn').disabled = true;
-        
-        this.updateStatus('Webcam stopped', 'complete');
-        this.stopRealTimeProcessing();
+        try {
+            this.webcamManager?.stop();
+            this.stopRealTimeProcessing();
+            
+            // Update UI
+            this.updateWebcamUI(false);
+            
+            // Remove any retry buttons
+            document.querySelectorAll('.retry-webcam-btn').forEach(btn => btn.remove());
+            
+            this.updateStatus('Camera stopped successfully', 'complete');
+            
+        } catch (error) {
+            console.error('Error stopping webcam:', error);
+            this.updateStatus('Error stopping camera: ' + error.message, 'error');
+        }
     }
     
     toggleRecording() {

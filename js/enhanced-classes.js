@@ -7,6 +7,7 @@
 
 /**
  * Enhanced WebcamManager - Complete camera handling with device management
+ * Now with robust error handling, fallback constraints, and better UX
  */
 class EnhancedWebcamManager {
     constructor() {
@@ -21,97 +22,282 @@ class EnhancedWebcamManager {
         this.animationId = null;
         this.capabilities = null;
         this.settings = null;
+        
+        // Enhanced error handling and retry logic
+        this.maxRetries = 3;
+        this.retryDelay = 1000;
+        this.permissionState = null;
+        this.initializationAttempts = 0;
+        this.errorHistory = [];
+        this.statusCallback = null;
+        
+        // Fallback constraint configurations
+        this.constraintProfiles = [
+            {
+                name: 'High Quality',
+                video: {
+                    width: { ideal: 1280, max: 1920 },
+                    height: { ideal: 720, max: 1080 },
+                    frameRate: { ideal: 30, max: 60 }
+                }
+            },
+            {
+                name: 'Medium Quality',
+                video: {
+                    width: { ideal: 854, max: 1280 },
+                    height: { ideal: 480, max: 720 },
+                    frameRate: { ideal: 30, max: 30 }
+                }
+            },
+            {
+                name: 'Low Quality',
+                video: {
+                    width: { ideal: 640, max: 854 },
+                    height: { ideal: 480, max: 480 },
+                    frameRate: { ideal: 15, max: 30 }
+                }
+            },
+            {
+                name: 'Basic',
+                video: {
+                    width: 320,
+                    height: 240,
+                    frameRate: 15
+                }
+            },
+            {
+                name: 'Minimal',
+                video: true
+            }
+        ];
     }
     
     async initialize() {
         try {
+            // Check if WebRTC is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('WebRTC not supported in this browser');
+            }
+            
             await this.enumerateDevices();
-            console.log('📹 Enhanced WebcamManager initialized');
+            console.log('📹 Enhanced WebcamManager initialized with robust error handling');
         } catch (error) {
             console.error('Failed to initialize webcam manager:', error);
+            this.logError('Initialization failed', error);
             throw error;
         }
     }
     
     async enumerateDevices() {
         try {
+            // Request permission first to get device labels
+            try {
+                const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                tempStream.getTracks().forEach(track => track.stop());
+            } catch (e) {
+                console.warn('Could not get temporary stream for device enumeration');
+            }
+            
             const devices = await navigator.mediaDevices.enumerateDevices();
             this.devices = devices.filter(device => device.kind === 'videoinput');
-            console.log(`Found ${this.devices.length} camera(s)`);
+            
+            console.log(`📹 Found ${this.devices.length} camera(s):`);
+            this.devices.forEach((device, index) => {
+                console.log(`  ${index + 1}. ${device.label || `Camera ${index + 1}`} (${device.deviceId.substring(0, 8)}...)`);
+            });
+            
             return this.devices;
         } catch (error) {
             console.error('Failed to enumerate devices:', error);
+            this.logError('Device enumeration failed', error);
             return [];
         }
     }
     
     async start(deviceId = null) {
+        this.updateStatus('Initializing camera...', 'info');
+        
         try {
             if (this.isActive) {
                 await this.stop();
             }
             
-            const constraints = {
-                video: {
-                    deviceId: deviceId ? { exact: deviceId } : undefined,
-                    width: { ideal: 1280, max: 1920 },
-                    height: { ideal: 720, max: 1080 },
-                    frameRate: { ideal: 30, max: 60 }
-                },
-                audio: false
-            };
+            // Check permissions first
+            await this.checkPermissions();
             
-            console.log('🎥 Starting enhanced webcam...');
-            
-            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            // Try multiple constraint profiles with retry logic
+            const stream = await this.initializeCameraWithFallbacks(deviceId);
+            this.stream = stream;
             this.currentDeviceId = deviceId;
             
-            // Get DOM elements
-            this.video = document.getElementById('webcamVideo');
-            this.canvas = document.getElementById('webcamCanvas');
+            // Setup DOM elements with error checking
+            await this.setupVideoElements();
             
-            if (!this.video || !this.canvas) {
-                throw new Error('Webcam video elements not found in DOM');
-            }
-            
-            this.ctx = this.canvas.getContext('2d');
-            
-            // Setup video element
-            this.video.srcObject = this.stream;
-            this.video.autoplay = true;
-            this.video.muted = true;
-            this.video.playsInline = true;
-            
-            // Wait for video to be ready
-            await new Promise((resolve, reject) => {
-                this.video.addEventListener('loadedmetadata', resolve, { once: true });
-                this.video.addEventListener('error', reject, { once: true });
-                setTimeout(() => reject(new Error('Video load timeout')), 10000);
-            });
-            
-            // Setup canvas size
-            this.canvas.width = this.video.videoWidth;
-            this.canvas.height = this.video.videoHeight;
-            
-            // Get capabilities and settings
-            const videoTrack = this.stream.getVideoTracks()[0];
-            if (videoTrack) {
-                try {
-                    this.capabilities = videoTrack.getCapabilities();
-                    this.settings = videoTrack.getSettings();
-                } catch (e) {
-                    console.warn('Could not get track capabilities/settings');
-                }
-            }
+            // Get capabilities and settings with error handling
+            this.getTrackInformation();
             
             this.isActive = true;
+            this.initializationAttempts = 0;
             this.startFrameCapture();
             
-            console.log(`✅ Enhanced webcam started: ${this.video.videoWidth}x${this.video.videoHeight}`);
+            const resolution = `${this.video.videoWidth}x${this.video.videoHeight}`;
+            const message = `Camera started successfully at ${resolution}`;
+            console.log(`✅ ${message}`);
+            this.updateStatus(message, 'success');
             
         } catch (error) {
-            console.error('Failed to start enhanced webcam:', error);
-            throw new Error('Failed to access webcam: ' + error.message);
+            this.logError('Camera start failed', error);
+            throw this.createUserFriendlyError(error);
+        }
+    }
+    
+    async checkPermissions() {
+        if (!navigator.permissions) {
+            console.warn('Permissions API not available');
+            return;
+        }
+        
+        try {
+            const permission = await navigator.permissions.query({ name: 'camera' });
+            this.permissionState = permission.state;
+            
+            if (permission.state === 'denied') {
+                throw new Error('PERMISSION_DENIED');
+            }
+            
+            console.log(`📹 Camera permission state: ${permission.state}`);
+        } catch (error) {
+            console.warn('Could not check camera permissions:', error);
+        }
+    }
+    
+    async initializeCameraWithFallbacks(deviceId) {
+        this.updateStatus('Requesting camera access...', 'info');
+        
+        for (let profileIndex = 0; profileIndex < this.constraintProfiles.length; profileIndex++) {
+            const profile = this.constraintProfiles[profileIndex];
+            const constraints = this.buildConstraints(profile, deviceId);
+            
+            console.log(`🎥 Trying ${profile.name} profile:`, constraints);
+            this.updateStatus(`Trying ${profile.name} settings...`, 'info');
+            
+            for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    console.log(`✅ ${profile.name} profile successful on attempt ${attempt}`);
+                    return stream;
+                    
+                } catch (error) {
+                    const errorInfo = this.analyzeError(error);
+                    console.warn(`❌ ${profile.name} profile failed (attempt ${attempt}/${this.maxRetries}):`, errorInfo.message);
+                    
+                    // If it's a permission error, don't retry
+                    if (errorInfo.type === 'permission') {
+                        throw error;
+                    }
+                    
+                    // If it's not the last attempt, wait before retrying
+                    if (attempt < this.maxRetries) {
+                        await this.delay(this.retryDelay * attempt);
+                    }
+                }
+            }
+        }
+        
+        throw new Error('INITIALIZATION_FAILED');
+    }
+    
+    buildConstraints(profile, deviceId) {
+        const constraints = {
+            video: { ...profile.video },
+            audio: false
+        };
+        
+        // Add device ID if specified
+        if (deviceId) {
+            if (typeof constraints.video === 'object') {
+                constraints.video.deviceId = { ideal: deviceId };
+            } else {
+                constraints.video = { deviceId: { ideal: deviceId } };
+            }
+        }
+        
+        return constraints;
+    }
+    
+    async setupVideoElements() {
+        // Get DOM elements with error checking
+        this.video = document.getElementById('webcamVideo');
+        this.canvas = document.getElementById('webcamCanvas');
+        
+        if (!this.video || !this.canvas) {
+            throw new Error('ELEMENTS_NOT_FOUND');
+        }
+        
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Setup video element with comprehensive error handling
+        this.video.srcObject = this.stream;
+        this.video.autoplay = true;
+        this.video.muted = true;
+        this.video.playsInline = true;
+        
+        this.updateStatus('Loading video...', 'info');
+        
+        // Wait for video to be ready with multiple event listeners
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                cleanup();
+                reject(new Error('VIDEO_LOAD_TIMEOUT'));
+            }, 10000);
+            
+            const cleanup = () => {
+                clearTimeout(timeout);
+                this.video.removeEventListener('loadedmetadata', onSuccess);
+                this.video.removeEventListener('error', onError);
+                this.video.removeEventListener('loadstart', onLoadStart);
+            };
+            
+            const onSuccess = () => {
+                cleanup();
+                resolve();
+            };
+            
+            const onError = (e) => {
+                cleanup();
+                reject(new Error('VIDEO_LOAD_ERROR: ' + (e.message || 'Unknown error')));
+            };
+            
+            const onLoadStart = () => {
+                console.log('📹 Video loading started...');
+            };
+            
+            this.video.addEventListener('loadedmetadata', onSuccess, { once: true });
+            this.video.addEventListener('error', onError, { once: true });
+            this.video.addEventListener('loadstart', onLoadStart, { once: true });
+        });
+        
+        // Setup canvas size with validation
+        if (this.video.videoWidth && this.video.videoHeight) {
+            this.canvas.width = this.video.videoWidth;
+            this.canvas.height = this.video.videoHeight;
+        } else {
+            throw new Error('INVALID_VIDEO_DIMENSIONS');
+        }
+    }
+    
+    getTrackInformation() {
+        const videoTrack = this.stream?.getVideoTracks()[0];
+        if (videoTrack) {
+            try {
+                this.capabilities = videoTrack.getCapabilities();
+                this.settings = videoTrack.getSettings();
+                
+                console.log('📹 Video track capabilities:', this.capabilities);
+                console.log('📹 Video track settings:', this.settings);
+            } catch (e) {
+                console.warn('Could not get track capabilities/settings:', e);
+            }
         }
     }
     
@@ -219,9 +405,23 @@ class EnhancedWebcamManager {
     getSettings() { return this.settings; }
     
     async switchDevice(deviceId) {
-        if (deviceId === this.currentDeviceId) return;
-        console.log(`🔄 Switching to device: ${deviceId}`);
-        await this.start(deviceId);
+        if (deviceId === this.currentDeviceId) {
+            console.log('Device already selected');
+            return;
+        }
+        
+        const device = this.devices.find(d => d.deviceId === deviceId);
+        const deviceName = device ? device.label || 'Unknown Camera' : 'Unknown Device';
+        
+        console.log(`🔄 Switching to device: ${deviceName}`);
+        this.updateStatus(`Switching to ${deviceName}...`, 'info');
+        
+        try {
+            await this.start(deviceId);
+        } catch (error) {
+            this.updateStatus(`Failed to switch to ${deviceName}: ${error.message}`, 'error');
+            throw error;
+        }
     }
     
     getStatus() {
@@ -234,7 +434,188 @@ class EnhancedWebcamManager {
             resolution: this.video ? {
                 width: this.video.videoWidth,
                 height: this.video.videoHeight
-            } : null
+            } : null,
+            permissionState: this.permissionState,
+            errorHistory: this.errorHistory.slice(-5), // Last 5 errors
+            initializationAttempts: this.initializationAttempts
+        };
+    }
+    
+    // Enhanced error handling and utility methods
+    analyzeError(error) {
+        const errorName = error.name || '';
+        const errorMessage = error.message || '';
+        
+        // Categorize error types
+        if (errorName === 'NotAllowedError' || errorMessage.includes('Permission denied')) {
+            return {
+                type: 'permission',
+                message: 'Camera access denied. Please allow camera permissions and refresh the page.',
+                userAction: 'Grant camera permission and refresh'
+            };
+        }
+        
+        if (errorName === 'NotFoundError' || errorMessage.includes('not found')) {
+            return {
+                type: 'notFound',
+                message: 'No camera found. Please connect a camera and try again.',
+                userAction: 'Connect a camera device'
+            };
+        }
+        
+        if (errorName === 'NotReadableError' || errorMessage.includes('in use')) {
+            return {
+                type: 'busy',
+                message: 'Camera is being used by another application. Please close other camera apps.',
+                userAction: 'Close other applications using the camera'
+            };
+        }
+        
+        if (errorName === 'OverconstrainedError' || errorMessage.includes('constraint')) {
+            return {
+                type: 'constraints',
+                message: 'Camera settings not supported. Trying alternative settings...',
+                userAction: 'Trying different camera settings automatically'
+            };
+        }
+        
+        if (errorMessage.includes('PERMISSION_DENIED')) {
+            return {
+                type: 'permission',
+                message: 'Camera permission was denied. Please enable camera access in your browser settings.',
+                userAction: 'Enable camera permission in browser settings'
+            };
+        }
+        
+        if (errorMessage.includes('VIDEO_LOAD_TIMEOUT')) {
+            return {
+                type: 'timeout',
+                message: 'Camera is taking too long to respond. Please try again.',
+                userAction: 'Try again or restart your browser'
+            };
+        }
+        
+        if (errorMessage.includes('ELEMENTS_NOT_FOUND')) {
+            return {
+                type: 'dom',
+                message: 'Camera interface elements not found. Please refresh the page.',
+                userAction: 'Refresh the page'
+            };
+        }
+        
+        if (errorMessage.includes('INITIALIZATION_FAILED')) {
+            return {
+                type: 'initialization',
+                message: 'Failed to initialize camera with any settings. Your camera may not be compatible.',
+                userAction: 'Try a different camera or check camera drivers'
+            };
+        }
+        
+        // Generic error
+        return {
+            type: 'unknown',
+            message: `Camera error: ${errorMessage}`,
+            userAction: 'Try refreshing the page or restarting your browser'
+        };
+    }
+    
+    createUserFriendlyError(originalError) {
+        const errorInfo = this.analyzeError(originalError);
+        const friendlyError = new Error(errorInfo.message);
+        friendlyError.originalError = originalError;
+        friendlyError.userAction = errorInfo.userAction;
+        friendlyError.errorType = errorInfo.type;
+        return friendlyError;
+    }
+    
+    logError(context, error) {
+        const errorEntry = {
+            timestamp: new Date().toISOString(),
+            context: context,
+            error: {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            },
+            userAgent: navigator.userAgent,
+            url: window.location.href
+        };
+        
+        this.errorHistory.push(errorEntry);
+        
+        // Keep only last 10 errors to prevent memory issues
+        if (this.errorHistory.length > 10) {
+            this.errorHistory.shift();
+        }
+        
+        console.error(`[WebcamManager] ${context}:`, error);
+    }
+    
+    updateStatus(message, type = 'info') {
+        console.log(`[WebcamManager Status] ${message}`);
+        
+        if (this.statusCallback) {
+            this.statusCallback(message, type);
+        }
+        
+        // Update UI status if elements exist
+        const statusElement = document.querySelector('.webcam-status');
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `webcam-status ${type}`;
+        }
+    }
+    
+    setStatusCallback(callback) {
+        this.statusCallback = callback;
+    }
+    
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // Enhanced retry mechanism with exponential backoff
+    async retryWithBackoff(operation, maxRetries = 3, baseDelay = 1000) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                if (attempt === maxRetries) {
+                    throw error;
+                }
+                
+                const delay = baseDelay * Math.pow(2, attempt - 1);
+                console.log(`Retry attempt ${attempt} failed, waiting ${delay}ms before next attempt...`);
+                await this.delay(delay);
+            }
+        }
+    }
+    
+    // Get detailed diagnostic information
+    getDiagnostics() {
+        return {
+            browser: {
+                userAgent: navigator.userAgent,
+                webRTCSupported: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                permissionsAPISupported: !!navigator.permissions
+            },
+            devices: {
+                count: this.devices.length,
+                list: this.devices.map(d => ({
+                    deviceId: d.deviceId.substring(0, 8) + '...',
+                    label: d.label || 'Unknown',
+                    groupId: d.groupId
+                }))
+            },
+            currentSession: {
+                isActive: this.isActive,
+                resolution: this.video ? `${this.video.videoWidth}x${this.video.videoHeight}` : null,
+                deviceId: this.currentDeviceId ? this.currentDeviceId.substring(0, 8) + '...' : null,
+                capabilities: this.capabilities,
+                settings: this.settings
+            },
+            errors: this.errorHistory.slice(-3), // Last 3 errors
+            timestamp: new Date().toISOString()
         };
     }
 }

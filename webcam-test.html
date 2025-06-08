@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Test - Enhanced Error Handling</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .test-section {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .test-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: 600;
+            border: 1px solid;
+        }
+        .status.success {
+            background: rgba(76,175,80,0.2);
+            color: #4CAF50;
+            border-color: #4CAF50;
+        }
+        .status.error {
+            background: rgba(239,83,80,0.2);
+            color: #EF5350;
+            border-color: #EF5350;
+        }
+        .status.info {
+            background: rgba(66,165,245,0.2);
+            color: #42A5F5;
+            border-color: #42A5F5;
+        }
+        .diagnostics {
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Enhanced Webcam Test Suite</h1>
+        <p>This test page demonstrates the improved webcam error handling and reliability features.</p>
+        
+        <div class="test-section">
+            <h3>📹 Basic Camera Test</h3>
+            <p>Test the enhanced camera initialization with fallback constraints:</p>
+            <button class="test-btn" onclick="testBasicCamera()">🎥 Start Camera</button>
+            <button class="test-btn" onclick="stopCamera()">⏹️ Stop Camera</button>
+            <button class="test-btn" onclick="switchCamera()">🔄 Switch Camera</button>
+            <div id="cameraStatus" class="status info">Ready to test camera</div>
+            <video id="testVideo" autoplay muted style="display:none;"></video>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Device Detection</h3>
+            <p>Test camera device enumeration and selection:</p>
+            <button class="test-btn" onclick="testDeviceDetection()">📱 Detect Cameras</button>
+            <div id="deviceStatus" class="status info">Click to detect available cameras</div>
+            <div id="deviceList" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>⚠️ Error Simulation</h3>
+            <p>Test different error scenarios and user-friendly messages:</p>
+            <button class="test-btn" onclick="simulatePermissionError()">🚫 Permission Denied</button>
+            <button class="test-btn" onclick="simulateNotFoundError()">❌ Camera Not Found</button>
+            <button class="test-btn" onclick="simulateBusyError()">📱 Camera Busy</button>
+            <button class="test-btn" onclick="simulateConstraintError()">⚙️ Constraint Error</button>
+            <div id="errorStatus" class="status info">Error simulation ready</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Diagnostics</h3>
+            <p>View detailed camera diagnostics and system information:</p>
+            <button class="test-btn" onclick="showDiagnostics()">🔬 Show Diagnostics</button>
+            <button class="test-btn" onclick="clearDiagnostics()">🗑️ Clear</button>
+            <div id="diagnosticsOutput" class="diagnostics"></div>
+        </div>
+    </div>
+    
+    <script>
+        let webcamManager = null;
+        let currentStream = null;
+        
+        // Initialize enhanced webcam manager
+        async function initWebcamManager() {
+            if (!webcamManager) {
+                // Check if we have the enhanced classes loaded
+                if (typeof EnhancedWebcamManager === 'undefined') {
+                    updateStatus('errorStatus', 'Enhanced webcam classes not loaded. Please run this from the main application.', 'error');
+                    return null;
+                }
+                
+                webcamManager = new EnhancedWebcamManager();
+                webcamManager.setStatusCallback((message, type) => {
+                    updateStatus('cameraStatus', message, type === 'success' ? 'success' : type);
+                });
+                
+                try {
+                    await webcamManager.initialize();
+                    updateStatus('cameraStatus', 'Enhanced webcam manager initialized successfully', 'success');
+                } catch (error) {
+                    updateStatus('cameraStatus', 'Failed to initialize: ' + error.message, 'error');
+                }
+            }
+            return webcamManager;
+        }
+        
+        async function testBasicCamera() {
+            const manager = await initWebcamManager();
+            if (!manager) return;
+            
+            try {
+                await manager.start();
+                
+                // Display video if successful
+                const video = document.getElementById('testVideo');
+                if (manager.video && manager.video.srcObject) {
+                    video.srcObject = manager.video.srcObject;
+                    video.style.display = 'block';
+                }
+                
+                updateStatus('cameraStatus', 'Camera started successfully!', 'success');
+            } catch (error) {
+                updateStatus('cameraStatus', `Camera failed: ${error.message}`, 'error');
+                if (error.userAction) {
+                    updateStatus('cameraStatus', `Action: ${error.userAction}`, 'info');
+                }
+            }
+        }
+        
+        async function stopCamera() {
+            if (webcamManager) {
+                webcamManager.stop();
+                document.getElementById('testVideo').style.display = 'none';
+                updateStatus('cameraStatus', 'Camera stopped', 'info');
+            }
+        }
+        
+        async function switchCamera() {
+            const manager = await initWebcamManager();
+            if (!manager) return;
+            
+            const devices = manager.getDevices();
+            if (devices.length > 1) {
+                const nextDevice = devices.find(d => d.deviceId !== manager.currentDeviceId);
+                if (nextDevice) {
+                    try {
+                        await manager.switchDevice(nextDevice.deviceId);
+                        updateStatus('cameraStatus', `Switched to: ${nextDevice.label || 'Unknown Camera'}`, 'success');
+                    } catch (error) {
+                        updateStatus('cameraStatus', `Switch failed: ${error.message}`, 'error');
+                    }
+                }
+            } else {
+                updateStatus('cameraStatus', 'No other cameras available to switch to', 'info');
+            }
+        }
+        
+        async function testDeviceDetection() {
+            updateStatus('deviceStatus', 'Detecting cameras...', 'info');
+            
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras = devices.filter(device => device.kind === 'videoinput');
+                
+                updateStatus('deviceStatus', `Found ${cameras.length} camera(s)`, 'success');
+                
+                const deviceList = document.getElementById('deviceList');
+                deviceList.innerHTML = '';
+                
+                cameras.forEach((camera, index) => {
+                    const deviceDiv = document.createElement('div');
+                    deviceDiv.style.cssText = `
+                        padding: 8px 12px;
+                        margin: 5px 0;
+                        background: rgba(255,255,255,0.1);
+                        border-radius: 8px;
+                        border: 1px solid rgba(255,255,255,0.2);
+                    `;
+                    deviceDiv.innerHTML = `
+                        <strong>Camera ${index + 1}:</strong> ${camera.label || 'Unknown Camera'}<br>
+                        <small>ID: ${camera.deviceId.substring(0, 20)}...</small>
+                    `;
+                    deviceList.appendChild(deviceDiv);
+                });
+                
+            } catch (error) {
+                updateStatus('deviceStatus', `Detection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function simulatePermissionError() {
+            const error = new Error('Permission denied');
+            error.name = 'NotAllowedError';
+            const friendlyError = analyzeError(error);
+            updateStatus('errorStatus', friendlyError.message, 'error');
+            setTimeout(() => {
+                updateStatus('errorStatus', `Action needed: ${friendlyError.userAction}`, 'info');
+            }, 1000);
+        }
+        
+        function simulateNotFoundError() {
+            const error = new Error('Requested device not found');
+            error.name = 'NotFoundError';
+            const friendlyError = analyzeError(error);
+            updateStatus('errorStatus', friendlyError.message, 'error');
+            setTimeout(() => {
+                updateStatus('errorStatus', `Action needed: ${friendlyError.userAction}`, 'info');
+            }, 1000);
+        }
+        
+        function simulateBusyError() {
+            const error = new Error('Could not start video source');
+            error.name = 'NotReadableError';
+            const friendlyError = analyzeError(error);
+            updateStatus('errorStatus', friendlyError.message, 'error');
+            setTimeout(() => {
+                updateStatus('errorStatus', `Action needed: ${friendlyError.userAction}`, 'info');
+            }, 1000);
+        }
+        
+        function simulateConstraintError() {
+            const error = new Error('Overconstrained');
+            error.name = 'OverconstrainedError';
+            const friendlyError = analyzeError(error);
+            updateStatus('errorStatus', friendlyError.message, 'error');
+            setTimeout(() => {
+                updateStatus('errorStatus', `Action needed: ${friendlyError.userAction}`, 'info');
+            }, 1000);
+        }
+        
+        function analyzeError(error) {
+            const errorName = error.name || '';
+            const errorMessage = error.message || '';
+            
+            if (errorName === 'NotAllowedError') {
+                return {
+                    message: 'Camera access denied. Please allow camera permissions and refresh the page.',
+                    userAction: 'Grant camera permission and refresh'
+                };
+            }
+            
+            if (errorName === 'NotFoundError') {
+                return {
+                    message: 'No camera found. Please connect a camera and try again.',
+                    userAction: 'Connect a camera device'
+                };
+            }
+            
+            if (errorName === 'NotReadableError') {
+                return {
+                    message: 'Camera is being used by another application. Please close other camera apps.',
+                    userAction: 'Close other applications using the camera'
+                };
+            }
+            
+            if (errorName === 'OverconstrainedError') {
+                return {
+                    message: 'Camera settings not supported. Trying alternative settings...',
+                    userAction: 'Trying different camera settings automatically'
+                };
+            }
+            
+            return {
+                message: `Camera error: ${errorMessage}`,
+                userAction: 'Try refreshing the page or restarting your browser'
+            };
+        }
+        
+        async function showDiagnostics() {
+            const diagnosticsOutput = document.getElementById('diagnosticsOutput');
+            
+            const diagnostics = {
+                timestamp: new Date().toISOString(),
+                browser: {
+                    userAgent: navigator.userAgent,
+                    webRTCSupported: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                    permissionsAPISupported: !!navigator.permissions
+                },
+                webcamManager: webcamManager ? {
+                    initialized: true,
+                    isActive: webcamManager.isActive,
+                    deviceCount: webcamManager.devices?.length || 0,
+                    currentDevice: webcamManager.currentDeviceId || 'none',
+                    errorHistory: webcamManager.errorHistory?.length || 0
+                } : { initialized: false }
+            };
+            
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras = devices.filter(d => d.kind === 'videoinput');
+                diagnostics.detectedCameras = cameras.map(c => ({
+                    label: c.label || 'Unknown',
+                    deviceId: c.deviceId.substring(0, 8) + '...'
+                }));
+            } catch (error) {
+                diagnostics.detectedCameras = 'Error: ' + error.message;
+            }
+            
+            diagnosticsOutput.textContent = JSON.stringify(diagnostics, null, 2);
+        }
+        
+        function clearDiagnostics() {
+            document.getElementById('diagnosticsOutput').textContent = '';
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus('cameraStatus', 'Enhanced webcam test suite ready', 'info');
+            
+            // Check if we're in the right environment
+            if (typeof EnhancedWebcamManager === 'undefined') {
+                updateStatus('cameraStatus', 'Note: This test works best when loaded from the main application', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
