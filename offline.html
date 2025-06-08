@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Amplification Pro - Offline</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255,255,255,0.1);
+            --glass-border: rgba(255,255,255,0.2);
+            --text-primary: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            text-align: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 50px 40px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .offline-icon {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.1); opacity: 1; }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #e3f2fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .offline-message {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .offline-features {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .offline-features h3 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            position: relative;
+            padding-left: 30px;
+            opacity: 0.9;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .retry-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76,175,80,0.3);
+            margin: 10px;
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76,175,80,0.4);
+        }
+
+        .cache-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(33,150,243,0.3);
+            margin: 10px;
+        }
+
+        .cache-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33,150,243,0.4);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        .status-offline {
+            background-color: #ff4444;
+        }
+
+        .status-online {
+            background-color: #44ff44;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .connection-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .offline-container {
+                padding: 30px 20px;
+            }
+            
+            .offline-icon {
+                font-size: 4rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .retry-btn, .cache-btn {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>You're Offline</h1>
+        
+        <div class="offline-message">
+            <p>No internet connection detected, but don't worry!</p>
+            <p><strong>Motion Amplification Pro</strong> works offline too.</p>
+        </div>
+
+        <div class="offline-features">
+            <h3>🚀 Available Offline Features</h3>
+            <ul class="feature-list">
+                <li>Process previously uploaded videos</li>
+                <li>Use all motion amplification presets</li>
+                <li>Adjust parameters and settings</li>
+                <li>Export processed videos and frames</li>
+                <li>Access cached analysis data</li>
+                <li>Use webcam for real-time processing</li>
+            </ul>
+        </div>
+
+        <div class="connection-status">
+            <span class="status-indicator status-offline"></span>
+            <span id="connection-text">Connection: Offline</span>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button class="retry-btn" onclick="checkConnection()">
+                🔄 Check Connection
+            </button>
+            <button class="cache-btn" onclick="goToApp()">
+                🚀 Continue Offline
+            </button>
+        </div>
+
+        <div style="margin-top: 30px; opacity: 0.7; font-size: 0.9rem;">
+            <p>💡 <strong>Tip:</strong> Your work is automatically saved locally and will sync when you're back online.</p>
+        </div>
+    </div>
+
+    <script>
+        // Check online status
+        function updateConnectionStatus() {
+            const indicator = document.querySelector('.status-indicator');
+            const text = document.getElementById('connection-text');
+            
+            if (navigator.onLine) {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'Connection: Online';
+                
+                // Automatically redirect if online
+                setTimeout(() => {
+                    window.location.href = './index.html';
+                }, 2000);
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'Connection: Offline';
+            }
+        }
+
+        // Check connection manually
+        function checkConnection() {
+            updateConnectionStatus();
+            
+            if (navigator.onLine) {
+                // Try to fetch a small resource to verify real connectivity
+                fetch('./manifest.json', { method: 'HEAD' })
+                    .then(() => {
+                        window.location.href = './index.html';
+                    })
+                    .catch(() => {
+                        alert('Connection appears limited. Continuing in offline mode.');
+                    });
+            } else {
+                alert('Still offline. You can continue using the app offline!');
+            }
+        }
+
+        // Go to main app
+        function goToApp() {
+            window.location.href = './index.html';
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Initial status check
+        updateConnectionStatus();
+
+        // Auto-check connection every 30 seconds
+        setInterval(updateConnectionStatus, 30000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                goToApp();
+            } else if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                checkConnection();
+            }
+        });
+
+        // Service worker messaging
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data.type === 'CACHE_UPDATED') {
+                    console.log('Cache updated, new content available');
+                }
+            });
+        }
+
+        console.log('🚀 Motion Amplification Pro - Offline Mode');
+        console.log('Features available offline:');
+        console.log('- Video processing');
+        console.log('- Real-time camera');
+        console.log('- Export capabilities');
+        console.log('- Data analysis');
+    </script>
+</body>
+</html>

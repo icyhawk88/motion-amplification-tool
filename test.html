@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Amplification Pro - Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .test-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        .status.success { background: rgba(76,175,80,0.2); }
+        .status.error { background: rgba(244,67,54,0.2); }
+        .status.info { background: rgba(33,150,243,0.2); }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .feature-status {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .feature-status.ready { color: #4CAF50; }
+        .feature-status.not-available { color: #FF5722; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Motion Amplification Pro - Test Suite</h1>
+        <p>This page tests the core functionality of Motion Amplification Pro</p>
+        
+        <div class="test-section">
+            <h2>🔧 System Tests</h2>
+            <button class="test-button" onclick="runSystemTests()">Run System Tests</button>
+            <button class="test-button" onclick="testWebGL()">Test WebGL</button>
+            <button class="test-button" onclick="testWebcam()">Test Webcam</button>
+            <button class="test-button" onclick="runAllTests()">Run All Tests</button>
+            <div id="system-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>⚡ Feature Status</h2>
+            <div class="feature-grid" id="feature-status">
+                <!-- Features will be populated here -->
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎬 Quick Demo</h2>
+            <button class="test-button" onclick="createTestVideo()">Create Test Animation</button>
+            <button class="test-button" onclick="openMainApp()">Open Main App</button>
+            <div id="demo-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Debug Information</h2>
+            <button class="test-button" onclick="showDebugInfo()">Show Debug Info</button>
+            <div id="debug-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load the main application scripts
+        const scripts = [
+            'js/webgl-processor.js',
+            'js/motion-worker.js', 
+            'js/enhanced-classes.js',
+            'js/motion-amp.js'
+        ];
+        
+        let scriptsLoaded = 0;
+        
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => {
+                    scriptsLoaded++;
+                    console.log(`✅ Loaded: ${src}`);
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error(`❌ Failed to load: ${src}`);
+                    reject(new Error(`Failed to load ${src}`));
+                };
+                document.head.appendChild(script);
+            });
+        }
+        
+        async function loadAllScripts() {
+            try {
+                for (const script of scripts) {
+                    await loadScript(script);
+                }
+                console.log('🎉 All scripts loaded successfully');
+                
+                // Initialize the application
+                if (typeof MotionAmplifierPro !== 'undefined') {
+                    window.motionAmp = new MotionAmplifierPro();
+                    updateFeatureStatus();
+                } else {
+                    showError('Motion Amplifier Pro class not found');
+                }
+            } catch (error) {
+                showError('Failed to load scripts: ' + error.message);
+            }
+        }
+        
+        function showStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            return div;
+        }
+        
+        function showError(message) {
+            console.error(message);
+            document.body.insertBefore(showStatus(message, 'error'), document.body.firstChild);
+        }
+        
+        function updateFeatureStatus() {
+            const container = document.getElementById('feature-status');
+            if (!window.motionAmp) {
+                container.innerHTML = '<p>Motion Amplifier not initialized</p>';
+                return;
+            }
+            
+            const features = {
+                'GPU Processing': window.motionAmp.gpuProcessor ? 'ready' : 'not-available',
+                'WebGL Support': window.WebGLRenderingContext ? 'ready' : 'not-available',
+                'Webcam Support': navigator.mediaDevices ? 'ready' : 'not-available',
+                'Web Workers': typeof Worker !== 'undefined' ? 'ready' : 'not-available',
+                'Service Worker': 'serviceWorker' in navigator ? 'ready' : 'not-available',
+                'Media Recorder': typeof MediaRecorder !== 'undefined' ? 'ready' : 'not-available',
+                'Enhanced Classes': typeof EnhancedWebcamManager !== 'undefined' ? 'ready' : 'not-available',
+                'PWA Support': 'serviceWorker' in navigator && 'PushManager' in window ? 'ready' : 'not-available'
+            };
+            
+            container.innerHTML = Object.entries(features).map(([name, status]) => `
+                <div class="feature-card">
+                    <div>${name}</div>
+                    <div class="feature-status ${status}">${status.replace('-', ' ').toUpperCase()}</div>
+                </div>
+            `).join('');
+        }
+        
+        async function runSystemTests() {
+            const results = document.getElementById('system-results');
+            results.innerHTML = '<p>Running system tests...</p>';
+            
+            try {
+                if (!window.motionAmpDebug) {
+                    throw new Error('Debug utilities not available');
+                }
+                
+                const testResults = await window.motionAmpDebug.testBasicFunctionality();
+                
+                if (testResults) {
+                    results.appendChild(showStatus('✅ All system tests passed!', 'success'));
+                } else {
+                    results.appendChild(showStatus('⚠️ Some system tests failed', 'error'));
+                }
+            } catch (error) {
+                results.appendChild(showStatus('❌ System tests failed: ' + error.message, 'error'));
+            }
+        }
+        
+        async function testWebGL() {
+            const results = document.getElementById('system-results');
+            
+            try {
+                if (!window.motionAmpDebug) {
+                    throw new Error('Debug utilities not available');
+                }
+                
+                const webglSupported = window.motionAmpDebug.testWebGL();
+                
+                if (webglSupported) {
+                    results.appendChild(showStatus('✅ WebGL is supported and working', 'success'));
+                } else {
+                    results.appendChild(showStatus('❌ WebGL is not supported', 'error'));
+                }
+            } catch (error) {
+                results.appendChild(showStatus('❌ WebGL test failed: ' + error.message, 'error'));
+            }
+        }
+        
+        async function testWebcam() {
+            const results = document.getElementById('system-results');
+            
+            try {
+                if (!window.motionAmpDebug) {
+                    throw new Error('Debug utilities not available');
+                }
+                
+                const webcamAvailable = await window.motionAmpDebug.testWebcam();
+                
+                if (webcamAvailable) {
+                    results.appendChild(showStatus('✅ Webcam access is available', 'success'));
+                } else {
+                    results.appendChild(showStatus('❌ No webcam devices found', 'error'));
+                }
+            } catch (error) {
+                results.appendChild(showStatus('❌ Webcam test failed: ' + error.message, 'error'));
+            }
+        }
+        
+        async function runAllTests() {
+            const results = document.getElementById('system-results');
+            results.innerHTML = '<p>Running comprehensive tests...</p>';
+            
+            try {
+                if (!window.motionAmpDebug) {
+                    throw new Error('Debug utilities not available');
+                }
+                
+                const allResults = await window.motionAmpDebug.runAllTests();
+                
+                const passed = Object.values(allResults).filter(Boolean).length;
+                const total = Object.keys(allResults).length;
+                
+                if (passed === total) {
+                    results.appendChild(showStatus(`🎉 All ${total} tests passed! System is ready.`, 'success'));
+                } else {
+                    results.appendChild(showStatus(`⚠️ ${passed}/${total} tests passed. Some features may not work.`, 'error'));
+                }
+                
+                // Show detailed results
+                Object.entries(allResults).forEach(([test, result]) => {
+                    const status = result ? '✅' : '❌';
+                    results.appendChild(showStatus(`${status} ${test}: ${result ? 'PASS' : 'FAIL'}`, result ? 'success' : 'error'));
+                });
+                
+            } catch (error) {
+                results.appendChild(showStatus('❌ Comprehensive tests failed: ' + error.message, 'error'));
+            }
+        }
+        
+        function createTestVideo() {
+            const results = document.getElementById('demo-results');
+            
+            try {
+                if (!window.motionAmpDebug) {
+                    throw new Error('Debug utilities not available');
+                }
+                
+                const canvas = window.motionAmpDebug.createTestVideo();
+                results.appendChild(showStatus('✅ Test animation created in top-right corner', 'success'));
+                
+                // Add removal button
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remove Test Animation';
+                removeBtn.className = 'test-button';
+                removeBtn.onclick = () => {
+                    canvas.remove();
+                    removeBtn.remove();
+                    results.appendChild(showStatus('Test animation removed', 'info'));
+                };
+                results.appendChild(removeBtn);
+                
+            } catch (error) {
+                results.appendChild(showStatus('❌ Failed to create test video: ' + error.message, 'error'));
+            }
+        }
+        
+        function openMainApp() {
+            window.open('./index.html', '_blank');
+        }
+        
+        function showDebugInfo() {
+            const results = document.getElementById('debug-results');
+            
+            try {
+                if (!window.motionAmpDebug) {
+                    throw new Error('Debug utilities not available');
+                }
+                
+                const debugInfo = window.motionAmpDebug.exportDebugInfo();
+                
+                const pre = document.createElement('pre');
+                pre.style.cssText = `
+                    background: rgba(0,0,0,0.3);
+                    padding: 15px;
+                    border-radius: 5px;
+                    overflow-x: auto;
+                    font-size: 12px;
+                    margin: 10px 0;
+                `;
+                pre.textContent = JSON.stringify(debugInfo, null, 2);
+                
+                results.innerHTML = '';
+                results.appendChild(showStatus('✅ Debug information exported', 'success'));
+                results.appendChild(pre);
+                
+            } catch (error) {
+                results.appendChild(showStatus('❌ Failed to get debug info: ' + error.message, 'error'));
+            }
+        }
+        
+        // Load scripts when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Starting Motion Amplification Pro Test Suite...');
+            loadAllScripts();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Amplification Pro - Reveal Hidden Motions</title>
+    <meta name="description" content="Professional motion amplification tool with GPU acceleration, real-time processing, and advanced analysis">
+    <meta name="keywords" content="motion amplification, video processing, eulerian, GPU, WebGL, real-time">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+</head>
+<body>
+    <!-- Skip Navigation for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <div class="container" id="main-content" role="main">
+        <div class="header">
+            <h1>🚀 Motion Amplification Pro</h1>
+            <p>Professional-grade motion analysis with GPU acceleration & real-time processing</p>
+            <div class="feature-badges">
+                <span class="badge gpu">⚡ GPU Accelerated</span>
+                <span class="badge realtime">📹 Real-time</span>
+                <span class="badge export">💾 Video Export</span>
+                <span class="badge analysis">📊 Analysis</span>
+            </div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="upload">📁 Upload Video</button>
+            <button class="mode-btn" data-mode="webcam">📹 Live Camera</button>
+            <button class="mode-btn" data-mode="analysis">📊 Analysis Mode</button>
+        </div>
+
+        <!-- Upload Mode -->
+        <div class="upload-section mode-panel" id="uploadMode">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">🎬</div>
+                <h3>Drop your video file here or click to select</h3>
+                <p>Supports MP4, WebM, AVI, MOV • Up to 4K resolution • GPU accelerated processing</p>
+                <input type="file" id="videoInput" class="file-input" accept="video/*">
+            </div>
+        </div>
+
+        <!-- Webcam Mode -->
+        <div class="webcam-section mode-panel" id="webcamMode" style="display: none;">
+            <div class="webcam-controls">
+                <button id="startWebcam" class="webcam-btn">🎥 Start Camera</button>
+                <button id="stopWebcam" class="webcam-btn" disabled>⏹️ Stop Camera</button>
+                <button id="recordBtn" class="webcam-btn" disabled>🔴 Record</button>
+                <select id="cameraSelect" class="camera-select">
+                    <option value="">Select Camera...</option>
+                </select>
+            </div>
+            <div class="webcam-container">
+                <video id="webcamVideo" autoplay muted></video>
+                <canvas id="webcamCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Advanced Controls -->
+        <div class="controls-section">
+            <div class="controls-header">
+                <h2>🎛️ Amplification Parameters</h2>
+                <div class="control-toggles">
+                    <button class="toggle-btn" id="gpuToggle">⚡ GPU Mode</button>
+                    <button class="toggle-btn" id="roiToggle">🎯 ROI Selection</button>
+                    <button class="toggle-btn" id="realTimeToggle">⚡ Real-time</button>
+                </div>
+            </div>
+            
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="amplification">🔊 Amplification Factor</label>
+                    <input type="range" id="amplification" min="1" max="100" value="15" step="1" aria-label="Motion amplification factor">
+                    <div class="value-display">Value: <span id="amplificationValue">15</span></div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="freqLow">📉 Low Frequency (Hz)</label>
+                    <input type="range" id="freqLow" min="0.1" max="10" value="0.5" step="0.1" aria-label="Low frequency cutoff in Hz">
+                    <div class="value-display">Value: <span id="freqLowValue">0.5</span> Hz</div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="freqHigh">📈 High Frequency (Hz)</label>
+                    <input type="range" id="freqHigh" min="0.5" max="20" value="3" step="0.1" aria-label="High frequency cutoff in Hz">
+                    <div class="value-display">Value: <span id="freqHighValue">3</span> Hz</div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="pyramidLevels">🔺 Pyramid Levels</label>
+                    <input type="range" id="pyramidLevels" min="2" max="10" value="6" step="1" aria-label="Number of pyramid levels for multi-scale analysis">
+                    <div class="value-display">Value: <span id="pyramidLevelsValue">6</span></div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="sigma">🌀 Gaussian Sigma</label>
+                    <input type="range" id="sigma" min="0.1" max="5" value="1.5" step="0.1" aria-label="Gaussian smoothing parameter">
+                    <div class="value-display">Value: <span id="sigmaValue">1.5</span></div>
+                </div>
+                
+                <div class="control-group">
+                    <label for="chromaThreshold">🎨 Chroma Threshold</label>
+                    <input type="range" id="chromaThreshold" min="0.001" max="0.5" value="0.05" step="0.001" aria-label="Minimum motion threshold for amplification">
+                    <div class="value-display">Value: <span id="chromaThresholdValue">0.05</span></div>
+                </div>
+            </div>
+            
+            <div class="presets">
+                <h3>⚡ Smart Presets</h3>
+                <div class="preset-grid">
+                    <button class="preset-btn" data-preset="heartbeat">💓 Heartbeat Detection</button>
+                    <button class="preset-btn" data-preset="breathing">🫁 Breathing Analysis</button>
+                    <button class="preset-btn" data-preset="vibration">📳 Mechanical Vibration</button>
+                    <button class="preset-btn" data-preset="structural">🏗️ Structural Motion</button>
+                    <button class="preset-btn" data-preset="micro">🔬 Micro-expressions</button>
+                    <button class="preset-btn" data-preset="plant">🌱 Plant Movement</button>
+                    <button class="preset-btn" data-preset="thermal">🌡️ Thermal Effects</button>
+                    <button class="preset-btn" data-preset="extreme">🚀 Extreme Amplification</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Section -->
+        <div class="processing-section">
+            <div class="video-comparison">
+                <!-- Comparison Slider Container -->
+                <div class="comparison-container">
+                    <div class="video-panel original-panel">
+                        <h3>📹 Original Video</h3>
+                        <div class="video-wrapper">
+                            <video id="originalVideo" controls style="display: none;"></video>
+                            <canvas id="originalCanvas" style="display: none;"></canvas>
+                            <div id="originalPlaceholder" class="placeholder">
+                                <div class="placeholder-content">
+                                    <div class="placeholder-icon">🎬</div>
+                                    <p>Upload a video or start camera to begin</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-slider-container">
+                        <input type="range" id="comparisonSlider" class="comparison-slider" min="0" max="100" value="50">
+                        <div class="slider-label">Drag to Compare</div>
+                    </div>
+                    
+                    <div class="video-panel amplified-panel">
+                        <h3>⚡ Motion Amplified</h3>
+                        <div class="video-wrapper">
+                            <canvas id="outputCanvas" style="display: none;" aria-label="Processed motion amplified video output"></canvas>
+                            <div id="outputPlaceholder" class="placeholder">
+                                <div class="placeholder-content">
+                                    <div class="placeholder-icon">⚡</div>
+                                    <p>Amplified video will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ROI Selection Overlay -->
+                <div id="roiOverlay" class="roi-overlay" style="display: none;">
+                    <div class="roi-instructions">
+                        🎯 Click and drag to select Region of Interest
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-panel">
+                <div class="button-group">
+                    <button id="processBtn" class="process-btn primary" disabled>🚀 Process Video</button>
+                    <button id="playBtn" class="process-btn" disabled>▶️ Play</button>
+                    <button id="pauseBtn" class="process-btn" disabled>⏸️ Pause</button>
+                    <button id="exportVideoBtn" class="process-btn export" disabled>💾 Export Video</button>
+                    <button id="exportFrameBtn" class="process-btn" disabled>📸 Export Frame</button>
+                    <button id="analysisBtn" class="process-btn analysis" disabled>📊 Analyze Motion</button>
+                </div>
+                
+                <div class="processing-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Processing Speed:</span>
+                        <span id="processingSpeed" class="stat-value">- fps</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">GPU Acceleration:</span>
+                        <span id="gpuStatus" class="stat-value">Disabled</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Video Resolution:</span>
+                        <span id="videoResolution" class="stat-value">-</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-text" id="progressText">Processing...</div>
+                </div>
+            </div>
+            
+            <div id="status" class="status" style="display: none;" role="status" aria-live="polite" aria-atomic="true"></div>
+        </div>
+
+        <!-- Analysis Dashboard -->
+        <div class="analysis-section mode-panel" id="analysisMode" style="display: none;">
+            <div class="analysis-grid">
+                <div class="analysis-panel">
+                    <h3>📊 Motion Analysis</h3>
+                    <canvas id="motionGraph" width="400" height="200"></canvas>
+                    <div class="analysis-controls">
+                        <button id="exportAnalysis" class="analysis-btn">💾 Export Data</button>
+                        <button id="resetAnalysis" class="analysis-btn">🔄 Reset</button>
+                    </div>
+                </div>
+                
+                <div class="analysis-panel">
+                    <h3>🌡️ Motion Heatmap</h3>
+                    <canvas id="heatmapCanvas" width="400" height="300"></canvas>
+                </div>
+                
+                <div class="analysis-panel">
+                    <h3>📈 Frequency Spectrum</h3>
+                    <canvas id="spectrumCanvas" width="400" height="200"></canvas>
+                </div>
+                
+                <div class="analysis-panel">
+                    <h3>📋 Motion Stats</h3>
+                    <div class="motion-stats">
+                        <div class="stat-row">
+                            <span>Peak Frequency:</span>
+                            <span id="peakFreq">- Hz</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Average Amplitude:</span>
+                            <span id="avgAmplitude">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Motion Intensity:</span>
+                            <span id="motionIntensity">-</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Dominant Motion:</span>
+                            <span id="dominantMotion">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Features Panel -->
+        <div class="advanced-section">
+            <h3>🔬 Advanced Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h4>GPU Acceleration</h4>
+                    <p>Process videos 100x faster using WebGL shaders</p>
+                    <div class="feature-status" id="gpuFeatureStatus">Ready</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h4>ROI Selection</h4>
+                    <p>Focus amplification on specific regions</p>
+                    <div class="feature-status" id="roiFeatureStatus">Ready</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📹</div>
+                    <h4>Real-time Processing</h4>
+                    <p>Live camera motion amplification</p>
+                    <div class="feature-status" id="realtimeFeatureStatus">Ready</div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h4>Video Export</h4>
+                    <p>Export amplified videos as MP4/WebM</p>
+                    <div class="feature-status" id="exportFeatureStatus">Ready</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h4>🚀 Motion Amplification Pro Features:</h4>
+            <div class="info-grid">
+                <div class="info-column">
+                    <h5>🔬 Advanced Processing</h5>
+                    <ul>
+                        <li>GPU-accelerated WebGL shaders</li>
+                        <li>Real-time parameter adjustment</li>
+                        <li>Multi-scale pyramid analysis</li>
+                        <li>Advanced temporal filtering</li>
+                    </ul>
+                </div>
+                <div class="info-column">
+                    <h5>🎯 Precision Tools</h5>
+                    <ul>
+                        <li>Region of Interest selection</li>
+                        <li>Before/after comparison slider</li>
+                        <li>Motion analysis dashboard</li>
+                        <li>Frequency spectrum analysis</li>
+                    </ul>
+                </div>
+                <div class="info-column">
+                    <h5>📹 Live Features</h5>
+                    <ul>
+                        <li>Real-time webcam processing</li>
+                        <li>Live motion visualization</li>
+                        <li>Recording capabilities</li>
+                        <li>Multiple camera support</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <p>Made with ❤️ and cutting-edge web technology</p>
+            <p>
+                <a href="https://github.com/yourusername/motion-amplification-tool">🌟 Star on GitHub</a> |
+                <a href="https://github.com/yourusername/motion-amplification-tool/issues">🐛 Report Issues</a> |
+                <a href="#" id="installPWA">📱 Install App</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- WebGL Shaders now defined in webgl-processor.js -->
+
+    <script src="js/webgl-processor.js"></script>
+    <script src="js/motion-worker.js"></script>
+    <script src="js/enhanced-classes.js"></script>
+    <script src="js/motion-amp.js"></script>
+</body>
+</html>

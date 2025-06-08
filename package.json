@@ -1,0 +1,35 @@
+{
+  "name": "motion-amplification-tool",
+  "version": "2.0.0",
+  "description": "Professional motion amplification with GPU acceleration and real-time processing",
+  "keywords": ["motion", "amplification", "video", "processing", "webgl", "computer-vision"],
+  "homepage": "https://your-username.github.io/motion-amplification-tool",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/motion-amplification-tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/motion-amplification-tool/issues"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "serve": "npx serve .",
+    "lint": "eslint js/**/*.js",
+    "lint:fix": "eslint js/**/*.js --fix",
+    "format": "prettier --write js/**/*.js css/**/*.css *.html *.md",
+    "format:check": "prettier --check js/**/*.js css/**/*.css *.html *.md",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "validate": "npm run lint && npm run format:check",
+    "deploy": "gh-pages -d .",
+    "build": "echo 'Static site - no build step required'"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0",
+    "gh-pages": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
