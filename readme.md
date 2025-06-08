@@ -12,7 +12,7 @@
 
 *Reveal the invisible world through cutting-edge signal processing and GPU acceleration*
 
-[🌟 **Live Demo**](https://your-actual-username.github.io/motion-amplification-tool) • [📖 **Documentation**](./docs/) • [🚀 **Get Started**](#quick-start) • [🤝 **Contribute**](./CONTRIBUTING.md)
+[🌟 **Live Demo**](https://icyhawk88.github.io/motion-amplification-tool) • [📖 **Documentation**](./docs/) • [🚀 **Get Started**](#quick-start) • [🤝 **Contribute**](./CONTRIBUTING.md)
 
 </div>
 
@@ -82,7 +82,7 @@ Motion Amplification Pro is a **revolutionary** web application that reveals imp
 
 ### 🌟 **Try It Now** (No Installation Required)
 
-1. **🌐 Visit the Live Demo**: [Motion Amplification Pro](https://your-actual-username.github.io/motion-amplification-tool)
+1. **🌐 Visit the Live Demo**: [Motion Amplification Pro](https://icyhawk88.github.io/motion-amplification-tool)
 2. **📹 Upload a video** or start your webcam
 3. **⚡ Choose a preset** (Heartbeat, Breathing, Vibration, etc.)
 4. **🎬 Click "Process Video"** and watch the magic happen!
@@ -99,7 +99,7 @@ Motion Amplification Pro is a **revolutionary** web application that reveals imp
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-actual-username/motion-amplification-tool.git
+git clone https://github.com/icyhawk88/motion-amplification-tool.git
 cd motion-amplification-tool
 
 # Serve locally (any method works)
@@ -318,7 +318,7 @@ We LOVE contributions! Here's how to get started:
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/your-actual-username/motion-amplification-tool.git
+git clone https://github.com/icyhawk88/motion-amplification-tool.git
 cd motion-amplification-tool
 
 # 2. Create feature branch
@@ -352,10 +352,10 @@ git push origin feature/amazing-feature
 
 <div align="center">
 
-![GitHub Stars](https://img.shields.io/github/stars/your-actual-username/motion-amplification-tool?style=social)
-![GitHub Forks](https://img.shields.io/github/forks/your-actual-username/motion-amplification-tool?style=social)
-![GitHub Issues](https://img.shields.io/github/issues/your-actual-username/motion-amplification-tool)
-![GitHub PRs](https://img.shields.io/github/issues-pr/your-actual-username/motion-amplification-tool)
+![GitHub Stars](https://img.shields.io/github/stars/icyhawk88/motion-amplification-tool?style=social)
+![GitHub Forks](https://img.shields.io/github/forks/icyhawk88/motion-amplification-tool?style=social)
+![GitHub Issues](https://img.shields.io/github/issues/icyhawk88/motion-amplification-tool)
+![GitHub PRs](https://img.shields.io/github/issues-pr/icyhawk88/motion-amplification-tool)
 
 **🏅 "Best Open Source Project 2024"** - *WebDev Awards*  
 **⭐ "Innovation in Web Technology"** - *Tech Excellence*  
@@ -369,8 +369,8 @@ git push origin feature/amazing-feature
 
 ### 💬 **Get Help**
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/your-actual-username/motion-amplification-tool/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/your-actual-username/motion-amplification-tool/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/icyhawk88/motion-amplification-tool/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/icyhawk88/motion-amplification-tool/discussions)
 - 📧 **Email Support**: your-actual-email@domain.com
 - 💬 **Discord Community**: [Join our Discord](https://discord.gg/your-invite)
 - 📺 **YouTube Tutorials**: [Motion Amp Channel](https://youtube.com/@motionamp)
@@ -422,7 +422,7 @@ Built upon groundbreaking research from **MIT CSAIL**:
 
 ## 🚀 **Ready to Reveal the Invisible?**
 
-[**🌟 Try Motion Amplification Pro Now**](https://your-actual-username.github.io/motion-amplification-tool)
+[**🌟 Try Motion Amplification Pro Now**](https://icyhawk88.github.io/motion-amplification-tool)
 
 **Made with ❤️ and cutting-edge technology**
 
